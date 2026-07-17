@@ -181,7 +181,7 @@ tr.hl{background:var(--amber-s)} tr.hl td:first-child{color:var(--amber)}
 .trace{font-family:var(--mono);font-size:12.3px;line-height:2.0}
 .trace .tool{display:inline;border:0;padding:0;background:none;color:var(--cyan);font-weight:700}
 .trace .memc{color:var(--amber);font-weight:700}
-.trace .cost{color:var(--amber);font-size:10.5px}
+
 .trace .ok{color:var(--green)} .trace .bad{color:var(--red)}
 .trace .ans{color:var(--green);font-weight:700}
 .epframes{display:flex;gap:8px;margin:6px 0}
@@ -693,7 +693,7 @@ similarity. Return JSON
         <div class="tool memtool"><div class="cmd">/memory</div><div class="r">recall / write</div></div>
         <div class="tool"><div class="cmd">/abstain</div><div class="r">calibrated stop</div></div>
       </div>
-      <div class="looparrow">observation + cost → back to state ⟲</div></div>
+      <div class="looparrow">observation → back to state ⟲</div></div>
     <div class="lp mem"><div class="t">episodic memory</div>
       <p>(video, span) ↦ verdict, confidence — shared across queries.<br>
       A <b>reuse gate</b> blocks unverified or low-confidence reuse (false-reuse harm control).</p></div>
@@ -861,7 +861,7 @@ similarity. Return JSON
   </table></div>
 
   <div class="stats">
-    <div class="stat"><div class="v">+12.7</div><div class="k">agent over CLIP, C-track@1 (36.3 → 49.0, p=4.8×10⁻⁶); cost 3.34/5 candidates opened</div></div>
+    <div class="stat"><div class="v">+12.7</div><div class="k">agent over CLIP, C-track@1 (36.3 → 49.0, p=4.8×10⁻⁶); opens 3.34/5 candidates</div></div>
     <div class="stat c"><div class="v">47%</div><div class="k">of queries where the agent overrules CLIP's top-1 — and is right 36% vs CLIP's 8% on those flips (+33 net)</div></div>
     <div class="stat g"><div class="v">p=0.19</div><div class="k">zero-shot 3B vs the frontier agent — statistically indistinguishable; the verification skill is intrinsic</div></div>
     <div class="stat r"><div class="v">34.7</div><div class="k">teacher C-track@IoU0.5 vs 49.0 at video level — temporal localization is the real bottleneck</div></div>
