@@ -1,0 +1,612 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>AMBER — Measuring the Ambiguity Penalty in Corpus-Level Video Moment Retrieval</title>
+<meta name="description" content="AMBER: a corpus-level video moment retrieval benchmark that preserves the whole match set — with the measurement, the agentic method, and honest negative results.">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><circle cx='50' cy='50' r='42' fill='%23c1780f'/></svg>">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,500;12..96,700;12..96,800&family=Fraunces:ital,opsz,wght@1,9..144,400;1,9..144,500&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#ffffff; --bg2:#faf7f0; --surface:#fffdf8; --line:#e7e0cf; --line2:#d6c9ab;
+  --amber:#c1780f; --amber-b:#a8630a; --amber-d:#8a5410; --amber-s:#f6efe0;
+  --cyan:#0e857a; --red:#cc3b28; --green:#3f8a2c;
+  --ink:#25211a; --mut:#6d6350; --mut2:#978c74;
+  --mono:'JetBrains Mono',ui-monospace,monospace;
+  --disp:'Bricolage Grotesque',sans-serif;
+  --serif:'Fraunces',serif;
+  --maxw:1120px;
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--disp);
+  font-size:16.5px;line-height:1.62;-webkit-font-smoothing:antialiased;overflow-x:hidden}
+.wrap{max-width:var(--maxw);margin:0 auto;padding:0 26px}
+a{color:inherit}
+::selection{background:var(--amber);color:#fff}
+.mono{font-family:var(--mono)} .amber{color:var(--amber)} .red{color:var(--red)}
+.green{color:var(--green)} .cyan{color:var(--cyan)}
+
+nav{position:sticky;top:0;z-index:40;background:rgba(255,255,255,.88);
+  backdrop-filter:blur(10px);border-bottom:1px solid var(--line)}
+nav .wrap{display:flex;align-items:center;justify-content:space-between;height:56px}
+.brand{font-weight:800;letter-spacing:.13em;font-size:14.5px;display:flex;gap:9px;align-items:center}
+.brand .dot{width:9px;height:9px;border-radius:50%;background:var(--amber)}
+.navlinks{display:flex;gap:22px;font-family:var(--mono);font-size:12px;color:var(--mut)}
+.navlinks a{text-decoration:none}.navlinks a:hover{color:var(--amber)}
+@media(max-width:820px){.navlinks{display:none}}
+
+header{padding:84px 0 56px;background:
+  radial-gradient(900px 500px at 85% -10%, rgba(193,120,15,.09), transparent 60%),
+  radial-gradient(700px 420px at 5% 8%, rgba(14,133,122,.05), transparent 55%)}
+.kicker{font-family:var(--mono);font-size:12px;letter-spacing:.3em;color:var(--amber-d);
+  text-transform:uppercase;margin-bottom:20px}
+h1.title{font-weight:800;font-size:clamp(44px,7.5vw,84px);line-height:.95;letter-spacing:-.028em;margin:0 0 20px}
+h1 .g{color:var(--amber)}
+.lede{max-width:780px;font-size:clamp(18px,2.1vw,22px);color:#4a4230;line-height:1.5}
+.lede em{font-family:var(--serif);font-style:italic;color:var(--amber)}
+.badges{display:flex;gap:10px;flex-wrap:wrap;margin-top:26px;font-family:var(--mono);font-size:12.5px}
+.badge{border:1px solid var(--line2);border-radius:100px;padding:6px 14px;color:var(--mut)}
+.badge b{color:var(--amber)}
+.cta{display:flex;gap:12px;margin-top:26px;flex-wrap:wrap}
+.btn{font-family:var(--mono);font-size:13px;padding:10px 18px;border-radius:9px;
+  text-decoration:none;border:1px solid var(--line2);transition:.2s}
+.btn:hover{border-color:var(--amber);color:var(--amber)}
+.btn.primary{background:var(--amber);color:#fff;border-color:var(--amber)}
+.btn.primary:hover{background:var(--amber-b);color:#fff}
+
+section{padding:74px 0;border-top:1px solid var(--line)}
+.sec-tag{font-family:var(--mono);font-size:11.5px;letter-spacing:.26em;text-transform:uppercase;
+  color:#fff;background:var(--amber);padding:4px 12px;border-radius:100px;font-weight:700;display:inline-block}
+.sec-tag.c2{background:var(--cyan)} .sec-tag.c3{background:var(--green)} .sec-tag.cr{background:var(--red)}
+h2{font-weight:800;font-size:clamp(30px,4.6vw,50px);line-height:1.02;letter-spacing:-.024em;margin:14px 0 10px}
+.sub{color:var(--mut);max-width:760px;font-size:16.5px;margin:0 0 34px}
+h3.block{font-family:var(--mono);font-size:12.5px;letter-spacing:.22em;text-transform:uppercase;
+  color:var(--mut);margin:44px 0 16px}
+
+table{width:100%;border-collapse:collapse;font-size:14px}
+th,td{text-align:left;padding:10px 13px;border-bottom:1px solid var(--line)}
+thead th{font-family:var(--mono);font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:var(--mut)}
+td:first-child{font-weight:600}
+tr.hl{background:var(--amber-s)} tr.hl td:first-child{color:var(--amber)}
+.tbl-wrap{overflow-x:auto;border:1px solid var(--line);border-radius:12px}
+.tnum{font-family:var(--mono)}
+
+.cards{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+@media(max-width:820px){.cards{grid-template-columns:1fr}}
+.card{border:1px solid var(--line);border-radius:14px;padding:22px 24px;background:var(--surface)}
+.card .t{font-family:var(--mono);font-size:12px;letter-spacing:.09em;text-transform:uppercase;margin-bottom:9px}
+.card.u .t{color:var(--amber)} .card.c .t{color:var(--cyan)}
+.card h4{margin:0 0 7px;font-size:20px}
+.card p{margin:0;color:var(--mut);font-size:14.5px;line-height:1.5}
+
+/* pipeline flow */
+.pipe{display:grid;grid-template-columns:repeat(6,1fr);gap:0;margin-top:8px}
+@media(max-width:900px){.pipe{grid-template-columns:1fr 1fr 1fr}}
+.stage{border:1px solid var(--line);background:var(--surface);padding:14px 13px;position:relative;
+  display:flex;flex-direction:column;gap:8px;min-height:150px}
+.stage:not(:last-child)::after{content:"→";position:absolute;right:-10px;top:44%;
+  color:var(--amber-d);font-family:var(--mono);z-index:3;background:var(--bg);padding:0 1px}
+@media(max-width:900px){.stage::after{display:none!important}}
+.stage .st{font-family:var(--mono);font-size:10px;color:var(--amber-d);letter-spacing:.1em}
+.stage h4{margin:0;font-size:14.5px;letter-spacing:-.01em}
+.stage p{margin:0;font-size:11.8px;color:var(--mut);line-height:1.42}
+.stage svg{width:100%;height:44px}
+.stage.out{border-color:var(--amber);background:var(--amber-s)}
+
+/* paired scoring schematic */
+.score-flow{display:grid;grid-template-columns:1.05fr .95fr .95fr 1.25fr;gap:14px;align-items:stretch}
+@media(max-width:900px){.score-flow{grid-template-columns:1fr 1fr}}
+.sf{border:1px solid var(--line);border-radius:12px;padding:16px 17px;background:var(--surface)}
+.sf .t{font-family:var(--mono);font-size:11px;letter-spacing:.08em;text-transform:uppercase;margin-bottom:10px;font-weight:700}
+.sf.rank .t{color:var(--ink)} .sf.bad{border-color:#e6c3bd;background:#fdf6f4}.sf.bad .t{color:var(--red)}
+.sf.good{border-color:#c4dcb8;background:#f6faf3}.sf.good .t{color:var(--green)}
+.sf.pen{border-color:var(--amber);background:var(--amber-s)}.sf.pen .t{color:var(--amber)}
+.sf .row{display:flex;align-items:center;gap:9px;font-family:var(--mono);font-size:12.5px;padding:4px 0}
+.chipbox{width:26px;height:17px;border:1px solid #999;border-radius:3px;background:#fff;flex:none}
+.chipbox.gold{border-color:var(--amber);background:#f3e3c4}
+.chipbox.dis{background:#e8e4da}
+.sf p{margin:6px 0 0;font-size:13px;line-height:1.45;color:var(--mut)}
+.sf .formula{font-family:var(--mono);font-size:13.5px;color:var(--ink);margin-top:4px}
+
+/* stats strip */
+.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-top:28px}
+@media(max-width:820px){.stats{grid-template-columns:1fr 1fr}}
+.stat{border:1px solid var(--line);border-radius:12px;padding:18px;background:var(--surface)}
+.stat .v{font-family:var(--mono);font-weight:700;font-size:29px;color:var(--amber);letter-spacing:-.02em}
+.stat.c .v{color:var(--cyan)} .stat.g .v{color:var(--green)} .stat.r .v{color:var(--red)}
+.stat .k{font-size:12.5px;color:var(--mut);margin-top:6px;line-height:1.4}
+
+/* demo explorer */
+.demo{border:1px solid var(--line2);border-radius:16px;background:var(--surface);overflow:hidden}
+.demo-top{display:flex;border-bottom:1px solid var(--line);overflow-x:auto}
+.qtab{flex:0 0 auto;padding:13px 16px;font-family:var(--mono);font-size:12px;color:var(--mut);
+  cursor:pointer;border-right:1px solid var(--line);white-space:nowrap;border-top:2px solid transparent}
+.qtab:hover{color:var(--ink);background:rgba(193,120,15,.05)}
+.qtab.act{color:var(--amber);border-top-color:var(--amber);background:rgba(193,120,15,.08)}
+.qtab .src{color:var(--mut2);font-size:10px}
+.demo-body{padding:22px 24px 26px}
+.qtext{font-family:var(--serif);font-style:italic;font-size:clamp(20px,2.8vw,27px);color:var(--amber);line-height:1.2}
+.qmeta{display:flex;gap:8px;flex-wrap:wrap;margin:12px 0 20px}
+.chip{font-family:var(--mono);font-size:11px;padding:4px 10px;border-radius:100px;border:1px solid var(--line2);color:var(--mut)}
+.chip.big{color:var(--red);border-color:#e6c3bd;font-weight:700}
+.chip.trk{color:var(--cyan);border-color:#bfe2dd}
+.moments{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}
+@media(max-width:900px){.moments{grid-template-columns:repeat(2,1fr)}}
+@media(max-width:520px){.moments{grid-template-columns:1fr}}
+.mcard{border:1px solid var(--line);border-radius:11px;overflow:hidden;background:#fff}
+.mcard .imwrap{position:relative;aspect-ratio:16/10;overflow:hidden;background:#111}
+.mcard img{width:100%;height:100%;object-fit:cover;display:block}
+.mcard .vtag{position:absolute;left:7px;top:7px;font-family:var(--mono);font-size:9.5px;
+  background:rgba(0,0,0,.65);color:#fff;padding:3px 6px;border-radius:5px;z-index:2}
+.mcard .span{position:absolute;right:7px;bottom:7px;font-family:var(--mono);font-size:9.5px;
+  background:rgba(0,0,0,.65);color:#ffd98a;padding:2px 6px;border-radius:5px;z-index:2}
+.mcard .mbody{padding:10px 11px 12px}
+.mcard .prov{font-family:var(--mono);font-size:9.5px;letter-spacing:.04em;margin-bottom:5px}
+.prov.anchor{color:var(--amber)} .prov.merge{color:var(--cyan)} .prov.scan{color:var(--green)}
+.mcard .cap{font-size:11.5px;color:var(--mut);line-height:1.4}
+.demo-foot{margin-top:16px;font-family:var(--mono);font-size:11.5px;color:var(--mut2);
+  display:flex;justify-content:space-between;flex-wrap:wrap;gap:8px}
+.demo-foot .more{color:var(--red)}
+
+/* honesty / notes */
+.note{border-left:3px solid var(--amber);padding:10px 0 10px 18px;color:#4a4230;font-size:15px;margin:22px 0}
+.note.red{border-color:var(--red)} .note.green{border-color:var(--green)}
+.note b.h{color:var(--amber)} .note.red b.h{color:var(--red)} .note.green b.h{color:var(--green)}
+
+/* agentic loop */
+.loop{display:grid;grid-template-columns:1.05fr 1fr 2fr 1.35fr;gap:12px;align-items:stretch}
+@media(max-width:980px){.loop{grid-template-columns:1fr 1fr}}
+.lp{border:1px solid var(--line);border-radius:12px;padding:14px 15px;background:var(--surface)}
+.lp .t{font-family:var(--mono);font-size:11px;letter-spacing:.08em;text-transform:uppercase;
+  margin-bottom:9px;font-weight:700;color:var(--mut)}
+.lp.mem{border-color:var(--amber);background:var(--amber-s)} .lp.mem .t{color:var(--amber)}
+.lp p{margin:0;font-size:13px;color:var(--mut);line-height:1.5}
+.toolgrid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px}
+.tool{border:1px solid var(--line);border-radius:8px;padding:8px 9px;background:#fff;text-align:center}
+.tool .cmd{font-family:var(--mono);font-weight:700;font-size:12px;color:var(--cyan)}
+.tool .r{font-size:10px;color:var(--mut2);margin-top:2px}
+.tool.memtool{border-color:var(--amber)} .tool.memtool .cmd{color:var(--amber)}
+.looparrow{text-align:center;font-family:var(--mono);font-size:11.5px;color:var(--mut2);margin:10px 0 0}
+
+/* episode */
+.episode{display:grid;grid-template-columns:1fr auto 1fr;gap:14px;margin-top:24px;align-items:stretch}
+@media(max-width:900px){.episode{grid-template-columns:1fr}}
+.ep{border:1px solid var(--line);border-radius:13px;background:var(--surface);padding:18px 20px}
+.ep .qt{font-family:var(--serif);font-style:italic;font-size:16.5px;color:var(--ink);margin-bottom:12px;line-height:1.35}
+.ep .qt b{color:var(--amber);font-style:normal;font-family:var(--mono);font-size:11px;letter-spacing:.08em}
+.trace{font-family:var(--mono);font-size:12.3px;line-height:2.0}
+.trace .tool{display:inline;border:0;padding:0;background:none;color:var(--cyan);font-weight:700}
+.trace .memc{color:var(--amber);font-weight:700}
+.trace .cost{color:var(--amber);font-size:10.5px}
+.trace .ok{color:var(--green)} .trace .bad{color:var(--red)}
+.trace .ans{color:var(--green);font-weight:700}
+.epframes{display:flex;gap:8px;margin:6px 0}
+.epframes img{height:74px;border-radius:6px;border:1px solid var(--line)}
+.membus{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;
+  font-family:var(--mono);font-size:11px;color:var(--amber)}
+.membus .pill{border:1.5px solid var(--amber);border-radius:10px;padding:9px 11px;background:var(--amber-s);font-weight:700}
+@media(max-width:900px){.membus{flex-direction:row}}
+.amortize{margin-top:14px;font-family:var(--mono);font-size:12.5px;color:var(--amber)}
+
+footer{border-top:1px solid var(--line);padding:52px 0 70px;color:var(--mut);font-size:14px}
+pre.bib{background:var(--bg2);border:1px solid var(--line);border-radius:10px;padding:16px;
+  font-family:var(--mono);font-size:12px;overflow-x:auto;color:var(--ink)}
+.fan{width:100%;max-width:640px;height:330px}
+.fan text{font-family:var(--mono);fill:var(--mut);font-size:11px}
+.prob-grid{display:grid;grid-template-columns:1fr 1.1fr;gap:40px;align-items:center}
+@media(max-width:880px){.prob-grid{grid-template-columns:1fr}}
+.big-num{font-family:var(--mono);font-weight:700;font-size:clamp(56px,8vw,96px);line-height:.9;color:var(--red)}
+.big-num small{display:block;font-size:14.5px;color:var(--mut);font-weight:400;margin-top:12px;max-width:320px;line-height:1.45}
+</style>
+</head>
+<body>
+
+<nav><div class="wrap">
+  <div class="brand"><span class="dot"></span>AMBER</div>
+  <div class="navlinks">
+    <a href="#problem">Problem</a><a href="#dataset">Dataset</a>
+    <a href="#measure">Measurement</a><a href="#method">Method</a>
+    <a href="#results">Results</a>
+    <a href="https://github.com/ClipCrawl" target="_blank" rel="noopener">GitHub ↗</a>
+  </div>
+</div></nav>
+
+<header><div class="wrap">
+  <div class="kicker">ClipCrawl · benchmark + method · under review</div>
+  <h1 class="title">AM<span class="g">BER</span></h1>
+  <p class="lede"><b>Measuring the ambiguity penalty in corpus-level video moment retrieval.</b>
+  A benchmark that <em>preserves the whole match set</em> — every match edge verified on pixels —
+  plus the agentic verification method built on top of it, and the honest negative results.</p>
+  <div class="badges">
+    <span class="badge"><b>1,106</b> queries</span>
+    <span class="badge"><b>3</b> video corpora</span>
+    <span class="badge">every edge <b>pixel-verified</b></span>
+    <span class="badge">penalty <b>+19.9</b> @1 on ambiguous queries</span>
+  </div>
+  <div class="cta">
+    <a class="btn primary" href="#dataset">Explore the dataset</a>
+    <a class="btn" href="#method">The agentic method</a>
+    <a class="btn" href="https://github.com/ClipCrawl" target="_blank" rel="noopener">Code &amp; data (soon)</a>
+  </div>
+</div></header>
+
+<!-- ================= PROBLEM ================= -->
+<section id="problem"><div class="wrap">
+  <span class="sec-tag cr">The problem</span>
+  <h2>Retrieval scores lie when the query is ambiguous.</h2>
+  <div class="prob-grid">
+    <div>
+      <div class="big-num">35<small>distinct videos in our corpus genuinely contain a moment matching
+      one real query — <span class="amber">“a person enters a room through a door.”</span>
+      One is marked gold; 34 correct answers get penalized.</small></div>
+    </div>
+    <div>
+      <p style="color:#4a4230">Every widely-used corpus-level VCMR benchmark marks exactly
+      <b>one</b> gold moment per query. But queries are rarely that specific. A system that
+      returns any of the non-annotated true matches is scored <span class="red"><b>wrong for
+      being right</b></span> — so reported accuracy is a lower bound of unknown tightness.
+      AMBER makes that looseness measurable.</p>
+      <svg class="fan" id="fansvg" viewBox="0 0 520 330" preserveAspectRatio="xMidYMid meet"></svg>
+    </div>
+  </div>
+</div></section>
+
+<!-- ================= DATASET ================= -->
+<section id="dataset" style="background:var(--bg2)"><div class="wrap">
+  <span class="sec-tag">The dataset</span>
+  <h2>1,106 queries, and every match they have.</h2>
+  <p class="sub">Built from three public corpora into one <b>ambiguity graph</b> per query, then
+  projected into two evaluation tracks. Construction runs entirely on open-weight local models.</p>
+
+  <div class="tbl-wrap"><table>
+    <thead><tr><th>Source</th><th>Queries</th><th>Corpus (videos)</th><th>Domain</th>
+    <th>Caption faithfulness<br><span style="text-transform:none;letter-spacing:0">(independent 2-round VLM audit, gate ≥ 0.90)</span></th></tr></thead>
+    <tbody>
+      <tr><td>Charades-FIG</td><td class="tnum">372</td><td class="tnum">933</td><td>indoor daily activities</td><td class="tnum green">1.00</td></tr>
+      <tr><td>DiDeMo</td><td class="tnum">372</td><td class="tnum">832</td><td>Flickr open-domain</td><td class="tnum green">0.91</td></tr>
+      <tr><td>QVHighlights</td><td class="tnum">362</td><td class="tnum">199</td><td>YouTube vlog / news</td><td class="tnum green">0.94</td></tr>
+    </tbody>
+  </table></div>
+  <div class="stats">
+    <div class="stat"><div class="v">0.495</div><div class="k">ambiguity rate — queries whose verified match set spans multiple moments (max 35)</div></div>
+    <div class="stat c"><div class="v">664/171/271</div><div class="k">train / val / test — anchor-level video-disjoint; train records carry a <span class="mono">supervision_safe</span> flag</div></div>
+    <div class="stat g"><div class="v">89.8%</div><div class="k">of shipped edges confirmed by an independent-family perceiver (InternVL3) on a 300-edge stratified sample</div></div>
+    <div class="stat"><div class="v">2.6–4.9%</div><div class="k">of anchors dropped by the pixel gate — unfaithful captions caught before release</div></div>
+  </div>
+
+  <h3 class="block">Construction — caption-driven, pixel-gated</h3>
+  <div class="pipe">
+    <div class="stage"><div class="st">1 · SEGMENT + CAPTION</div><h4>Describe events</h4>
+      <svg viewBox="0 0 120 34"><rect x="4" y="8" width="112" height="18" rx="2" fill="none" stroke="#b9ad92"/>
+      <rect x="4" y="8" width="36" height="18" fill="none" stroke="#b9ad92"/><rect x="42" y="8" width="36" height="18" fill="none" stroke="#b9ad92"/></svg>
+      <p>Content-adaptive event segmentation; one local-VLM caption per event. Captions are the sole semantic medium.</p></div>
+    <div class="stage"><div class="st">2 · GENERATE</div><h4>Query from caption</h4>
+      <svg viewBox="0 0 120 34"><rect x="14" y="4" width="92" height="24" rx="5" fill="#f6efe0" stroke="#c1780f"/>
+      <text x="60" y="20" text-anchor="middle" font-family="monospace" font-size="8" fill="#8a5410">“enters through a door”</text></svg>
+      <p>An LLM writes coarse + fine queries — never reusing 3 consecutive caption words, so matching stays semantic.</p></div>
+    <div class="stage"><div class="st">3 · MERGE</div><h4>Discover ambiguity</h4>
+      <svg viewBox="0 0 120 34"><circle cx="18" cy="17" r="6" fill="#c1780f"/>
+      <rect x="62" y="4" width="12" height="9" fill="#fff" stroke="#999"/><rect x="62" y="21" width="12" height="9" fill="#fff" stroke="#999"/>
+      <line x1="25" y1="15" x2="61" y2="8" stroke="#999" stroke-dasharray="3 2"/><line x1="25" y1="19" x2="61" y2="25" stroke="#999" stroke-dasharray="3 2"/></svg>
+      <p>Near-identical queries from different videos merge — two events spawning the same query <i>are</i> an ambiguity edge.</p></div>
+    <div class="stage"><div class="st">4 · CORPUS SCAN</div><h4>Entailment sweep</h4>
+      <svg viewBox="0 0 120 34"><circle cx="14" cy="17" r="6" fill="#c1780f"/>
+      <rect x="52" y="2" width="11" height="8" fill="#fff" stroke="#999"/><rect x="52" y="13" width="11" height="8" fill="#f3e3c4" stroke="#c1780f"/>
+      <rect x="52" y="24" width="11" height="8" fill="#fff" stroke="#999"/><rect x="82" y="13" width="11" height="8" fill="#fff" stroke="#999"/>
+      <line x1="20" y1="15" x2="51" y2="6" stroke="#999" stroke-dasharray="3 2"/><line x1="20" y1="17" x2="51" y2="17" stroke="#999" stroke-dasharray="3 2"/>
+      <line x1="20" y1="19" x2="51" y2="28" stroke="#999" stroke-dasharray="3 2"/><line x1="20" y1="17" x2="81" y2="17" stroke="#999" stroke-dasharray="3 2"/></svg>
+      <p>Each query is checked against <b>every</b> caption in the corpus (BM25 → LLM entailment, k=200) → the full text-space match set.</p></div>
+    <div class="stage"><div class="st">5 · PIXEL GATE</div><h4>Verify every edge</h4>
+      <svg viewBox="0 0 120 34"><circle cx="14" cy="17" r="6" fill="#c1780f"/>
+      <line x1="20" y1="14" x2="52" y2="6" stroke="#3f8a2c" stroke-width="1.6"/><text x="34" y="8" font-size="8" fill="#3f8a2c">✓</text>
+      <line x1="20" y1="17" x2="52" y2="17" stroke="#3f8a2c" stroke-width="1.6"/><text x="34" y="15" font-size="8" fill="#3f8a2c">✓</text>
+      <line x1="20" y1="20" x2="52" y2="28" stroke="#cc3b28" stroke-width="1.4" stroke-dasharray="3 2"/><text x="34" y="30" font-size="8" fill="#cc3b28">✕</text>
+      <rect x="53" y="2" width="11" height="8" fill="#f3e3c4" stroke="#c1780f"/><rect x="53" y="13" width="11" height="8" fill="#fff" stroke="#999"/>
+      <rect x="53" y="24" width="11" height="8" fill="#fff" stroke="#999" opacity=".4"/></svg>
+      <p>A VLM re-checks every edge on real frames — <b>including the anchor</b>. A failed anchor drops the whole query (gate-<i>all</i>).</p></div>
+    <div class="stage out"><div class="st" style="color:var(--amber)">6 · RELEASE</div><h4>Dual-track record</h4>
+      <svg viewBox="0 0 120 34"><rect x="8" y="4" width="104" height="26" rx="4" fill="#fff" stroke="#c1780f"/>
+      <text x="60" y="15" text-anchor="middle" font-family="monospace" font-size="7.5" fill="#25211a">query + match set M</text>
+      <text x="60" y="25" text-anchor="middle" font-family="monospace" font-size="7.5" fill="#8a5410">{(vid, tₛ, tₑ)} · tracks U/C</text></svg>
+      <p>Video-disjoint splits, checksummed manifest, metric unit tests, per-arm predictions.</p></div>
+  </div>
+
+  <h3 class="block">The two tracks</h3>
+  <div class="cards">
+    <div class="card u"><div class="t">U — query-unique</div><h4>Honest single-gold</h4>
+      <p>558 queries whose verified match set is a single moment. Standard R@K / VCMR@IoU are
+      exact here — there is no un-annotated true match to wrongly penalize.</p></div>
+    <div class="card c"><div class="t">C — recall-complete</div><h4>The full match set</h4>
+      <p>All 1,106 queries with <i>every</i> verified match published. Multi-positive metrics
+      (Correct@K, mAP@R, NDCG@IoU): a system is right if it finds <i>any</i> true moment.</p></div>
+  </div>
+
+  <h3 class="block">Live examples — real records, real frames</h3>
+  <div class="demo" id="demo">
+    <div class="demo-top" id="qtabs"></div>
+    <div class="demo-body">
+      <div class="qtext" id="qtext"></div>
+      <div class="qmeta" id="qmeta"></div>
+      <div class="moments" id="moments"></div>
+      <div class="demo-foot" id="dfoot"></div>
+    </div>
+  </div>
+
+  <div class="note">
+    <b class="h">Label quality, stated plainly.</b> Captions, queries, entailment and the pixel
+    gate share a model family, so we audit from outside it: an independent-family caption audit
+    (1.00 / 0.91 / 0.94), a cross-family re-gate (InternVL3 confirms 89.8% of shipped edges;
+    scan-mined edges are the weakest stratum at 82–85%), and a measured construction-bias probe —
+    BM25 over the <i>construction captions</i> reaches 53–80% C-track@1, far above every pixel
+    system, so the captions are withheld from the evaluation release. A human edge audit is the
+    remaining step and is planned.
+  </div>
+</div></section>
+
+<!-- ================= MEASUREMENT ================= -->
+<section id="measure"><div class="wrap">
+  <span class="sec-tag">The measurement</span>
+  <h2>One ranking, scored two ways.</h2>
+  <p class="sub">The gap between them is the <b>ambiguity penalty</b> — the rate at which
+  single-gold scoring marks a correct retrieval wrong.</p>
+
+  <div class="score-flow">
+    <div class="sf rank"><div class="t">system's ranking</div>
+      <div class="row"><span>1.</span><span class="chipbox"></span><span>m₂ ∈ M (true match)</span></div>
+      <div class="row"><span>2.</span><span class="chipbox dis"></span><span>distractor</span></div>
+      <div class="row"><span>3.</span><span class="chipbox gold"></span><span>anchor ★</span></div></div>
+    <div class="sf bad"><div class="t">single-GT (prior benchmarks)</div>
+      <p>Only the anchor ★ counts.<br>Top-1 = m₂ ⇒ <b class="red">scored wrong</b></p>
+      <div class="formula red">hit@1 = 0</div></div>
+    <div class="sf good"><div class="t">C-track (AMBER)</div>
+      <p>Any m ∈ M counts.<br>Top-1 = m₂ ⇒ <b class="green">correct</b></p>
+      <div class="formula green">hit@1 = 1</div></div>
+    <div class="sf pen"><div class="t">ambiguity penalty</div>
+      <div class="formula">Δ@k = C-track@k − single-GT@k</div>
+      <p>= the rate of being <i>wrong for being right</i>.<br>
+      Built-in control: |M<sub>q</sub>| = 1 ⇒ Δ ≡ 0 — measured <b>exactly 0.000</b> for every
+      system, at every k, in every source.</p></div>
+  </div>
+
+  <h3 class="block">The penalty (CLIP-VR baseline, all 1,106 queries)</h3>
+  <div class="tbl-wrap"><table>
+    <thead><tr><th>Subset</th><th>n</th><th>single-GT @1/@5/@10</th><th>C-track @1/@5/@10</th><th>penalty Δ</th></tr></thead>
+    <tbody>
+      <tr class="hl"><td>multi-video</td><td class="tnum">387</td><td class="tnum">15.0 / 35.1 / 47.0</td>
+        <td class="tnum">34.9 / 63.3 / 75.5</td><td class="tnum"><b>+19.9 / +28.2 / +28.4</b></td></tr>
+      <tr><td>single-video (control)</td><td class="tnum">719</td><td class="tnum">37.1 / 58.6 / 68.2</td>
+        <td class="tnum">37.1 / 58.6 / 68.2</td><td class="tnum green">+0.0 / +0.0 / +0.0</td></tr>
+      <tr><td>all</td><td class="tnum">1,106</td><td class="tnum">29.4 / 50.4 / 60.8</td>
+        <td class="tnum">36.3 / 60.2 / 70.7</td><td class="tnum">+7.0 / +9.9 / +9.9</td></tr>
+    </tbody>
+  </table></div>
+  <p class="sub" style="margin-top:14px">True rank-1 accuracy on ambiguous queries is
+  <b>2.3×</b> the single-gold score. Per source: Charades +13.3 · DiDeMo +23.8 · QVH +26.0.
+  Test-split-only, with bootstrap CI: +15.2 [8.7, 22.8].</p>
+
+  <div class="note green">
+    <b class="h">External validity — the penalty exists for human queries too.</b>
+    Running the <i>original human-written</i> DiDeMo annotations through the same verification
+    machinery yields a multi-video penalty of <b>+23.9</b> — matching the generated-query value
+    (+23.8) almost exactly; human queries are even more ambiguous than generated ones
+    (0.56 vs 0.41). QVHighlights: +50.0 (n=16). The mis-scoring is a property of the source
+    benchmarks' annotations, not of our query generator.
+  </div>
+
+  <h3 class="block">The penalty grows with system quality</h3>
+  <div class="tbl-wrap"><table>
+    <thead><tr><th>System (multi-video test queries, n=88)</th><th>single-GT@1</th><th>C-track@1</th><th>penalty</th></tr></thead>
+    <tbody>
+      <tr><td>CLIP-VR (ranking only)</td><td class="tnum">14.8</td><td class="tnum">29.5</td><td class="tnum">+14.8</td></tr>
+      <tr><td>Frontier agent</td><td class="tnum">15.9</td><td class="tnum">38.6</td><td class="tnum">+22.7</td></tr>
+      <tr><td>Zero-shot 3B verifier</td><td class="tnum">15.9</td><td class="tnum">39.8</td><td class="tnum">+23.9</td></tr>
+    </tbody>
+  </table></div>
+  <p class="sub" style="margin-top:14px">Single-gold scores barely move while honest scores climb:
+  the better the system, the more often its top-1 is a true-but-unannotated match — single-gold
+  leaderboards compress exactly the differences they exist to measure (gap vs CLIP:
+  +9.1, CI [1.1, 18.2]). A corpus-moment-level analogue of pooling bias in IR evaluation.</p>
+</div></section>
+
+<!-- ================= METHOD ================= -->
+<section id="method" style="background:var(--bg2)"><div class="wrap">
+  <span class="sec-tag c2">The method</span>
+  <h2>An agentic loop that pays for pixels only where they matter.</h2>
+  <p class="sub">A VLM policy over a cost-metered tool registry, with an episodic memory shared
+  across queries — because AMBER's match sets expose exactly which queries share moments.</p>
+
+  <div class="loop">
+    <div class="lp"><div class="t">state</div>
+      <p>query · CLIP shortlist · observations so far · <span class="amber mono">budget ledger</span></p></div>
+    <div class="lp"><div class="t">VLM policy</div>
+      <p>reads the state, picks the next tool — or stops and answers.</p></div>
+    <div class="lp"><div class="t">tool registry (cost class)</div>
+      <div class="toolgrid">
+        <div class="tool"><div class="cmd">/clip</div><div class="r">shortlist</div></div>
+        <div class="tool"><div class="cmd">/caption</div><div class="r">describe</div></div>
+        <div class="tool"><div class="cmd">/verify</div><div class="r">pixel check</div></div>
+        <div class="tool"><div class="cmd">/ground</div><div class="r">localize span</div></div>
+        <div class="tool memtool"><div class="cmd">/memory</div><div class="r">recall / write</div></div>
+        <div class="tool"><div class="cmd">/abstain</div><div class="r">calibrated stop</div></div>
+      </div>
+      <div class="looparrow">observation + cost → back to state ⟲</div></div>
+    <div class="lp mem"><div class="t">episodic memory</div>
+      <p>(video, span) ↦ verdict, confidence — shared across queries.<br>
+      A <b>reuse gate</b> blocks unverified or low-confidence reuse (false-reuse harm control).</p></div>
+  </div>
+
+  <h3 class="block">A worked episode — two real test queries, one shared verified moment</h3>
+  <p class="sub" style="margin-bottom:18px">These two queries' verified match sets share the moment
+  <span class="mono">735W9 @ 10.2–20.4s</span> — a real ambiguity edge in AMBER. Perception is
+  paid once, then amortized across the edge.</p>
+
+  <div class="episode">
+    <div class="ep">
+      <div class="qt"><b>QUERY A</b><br>“A person sits at a table and rotates a hairdryer.”</div>
+      <div class="trace">
+        <span class="tool">/clip</span> → top-5, Δscore &lt; 0.013 (look-alikes) <span class="cost">+1</span><br>
+        <span class="memc">/memory recall</span> → miss <span class="cost">+0</span><br>
+        <span class="tool">/verify</span> rank 1: table ✓ but a <b>mixing bowl</b> <span class="bad">⇒ reject</span> <span class="cost">+4</span>
+        <div class="epframes"><img src="assets/agent_bowl.jpg" alt="CLIP top-1: a person at a table with a mixing bowl — rejected"></div>
+        <span class="tool">/verify</span> rank 3: “turns a black/blue hair dryer” <span class="ok">⇒ match .85</span> <span class="cost">+4</span>
+        <div class="epframes"><img src="assets/agent_dryer.jpg" alt="Rank 3: a person rotating a hairdryer — accepted"></div>
+        <span class="tool">/ground</span> → span (10.2, 20.4)s <span class="cost">+2</span><br>
+        <span class="memc">/memory write</span> (735W9, 10.2–20.4) ↦ match, .85<br>
+        <span class="ans">answer</span> (735W9, 10.2–20.4s) · spent 11
+      </div>
+    </div>
+    <div class="membus"><span>write ↴</span><div class="pill">memory</div><span>↳ read</span></div>
+    <div class="ep">
+      <div class="qt"><b>QUERY B</b> (fine-grained — its match set contains the <i>same</i> moment)<br>
+      “Someone wearing a pink hooded top and eyeglasses is seated at a table, closely inspecting
+      a black and blue portable gadget.”</div>
+      <div class="trace">
+        <span class="tool">/clip</span> → shortlist; 735W9 present <span class="cost">+1</span><br>
+        <span class="memc">/memory recall</span> → <b>HIT</b>: (735W9, 10.2–20.4)<br>
+        <span style="color:var(--mut2)">reuse gate: verified verdict, conf .85 ≥ τ, moment consistent
+        with the query ⇒ reuse, <b>no re-verification</b></span><br>
+        <span class="ans">answer</span> (735W9, 10.2–20.4s) · spent 1
+      </div>
+      <div class="amortize">2 tool calls instead of 6 — perception amortized across the ambiguity edge.</div>
+    </div>
+  </div>
+
+  <p class="sub" style="margin-top:22px">The frontier-agent numbers below exercise the
+  <span class="mono">/verify</span> core of this loop; frames and verdict texts above are from the
+  released artifacts.</p>
+</div></section>
+
+<!-- ================= RESULTS ================= -->
+<section id="results"><div class="wrap">
+  <span class="sec-tag c3">Results</span>
+  <h2>Looking beats ranking. The skill is already in small models.</h2>
+  <p class="sub">All systems get the <b>identical</b> CLIP top-5 shortlist on the held-out test
+  split, scored identically — the only variable is what each system does with pixels.</p>
+
+  <div class="tbl-wrap"><table>
+    <thead><tr><th>System (matched test queries, n=259)</th><th>single-GT@1</th><th>C-track@1</th>
+      <th>multi-video C@1</th><th>vs previous (McNemar)</th></tr></thead>
+    <tbody>
+      <tr><td>CLIP-VR (never looks)</td><td class="tnum">31.3</td><td class="tnum">36.3</td><td class="tnum">29.5</td><td class="tnum">—</td></tr>
+      <tr class="hl"><td>Zero-shot 3B verifier (Qwen2.5-VL)</td><td class="tnum">37.8</td><td class="tnum">45.9</td><td class="tnum">39.8</td><td class="tnum">p=1.5e-3 **</td></tr>
+      <tr><td>+ SFT distillation (decontaminated)</td><td class="tnum">37.1</td><td class="tnum">45.2</td><td class="tnum">37.5</td><td class="tnum">p=0.83 n.s.</td></tr>
+      <tr><td>+ GRPO, anchor-only reward</td><td class="tnum">39.4</td><td class="tnum">47.9</td><td class="tnum">40.9</td><td class="tnum">p=0.15 n.s.</td></tr>
+      <tr><td>+ GRPO, C-track reward</td><td class="tnum">39.0</td><td class="tnum">46.7</td><td class="tnum">39.8</td><td class="tnum">p=0.37 n.s.</td></tr>
+      <tr class="hl"><td>Frontier agent (teacher)</td><td class="tnum">41.3</td><td class="tnum">49.0</td><td class="tnum">38.6</td><td class="tnum">p=0.38 n.s. (tied)</td></tr>
+    </tbody>
+  </table></div>
+
+  <div class="stats">
+    <div class="stat"><div class="v">+12.7</div><div class="k">agent over CLIP, C-track@1 (36.3 → 49.0, p=4.8×10⁻⁶); cost 3.34/5 candidates opened</div></div>
+    <div class="stat c"><div class="v">47%</div><div class="k">of queries where the agent overrules CLIP's top-1 — and is right 36% vs CLIP's 8% on those flips (+33 net)</div></div>
+    <div class="stat g"><div class="v">p=0.19</div><div class="k">zero-shot 3B vs the frontier agent — statistically indistinguishable; the verification skill is intrinsic</div></div>
+    <div class="stat r"><div class="v">34.7</div><div class="k">teacher C-track@IoU0.5 vs 49.0 at video level — temporal localization is the real bottleneck</div></div>
+  </div>
+
+  <h3 class="block">Negative results, reported as such</h3>
+  <div class="note red">
+    <b class="h">SFT distillation: null.</b> An apparent +2.7 gain under a naive anchor-disjoint
+    split was <b>entirely supervision leakage</b> (39% of test queries had a gold video the
+    student trained on). After decontamination: −0.7 vs zero-shot (p=0.83). We ship the
+    decontaminated numbers and a per-record <span class="mono">supervision_safe</span> flag.
+  </div>
+  <div class="note red">
+    <b class="h">Multi-positive RL reward vs anchor-only: no significant difference</b> at our
+    training scale (357 clean queries, shortlist-depth-5 regime where the two rewards coincide on
+    89% of queries). A redesigned run targeting the regime where anchor-reward starves is in
+    progress.
+  </div>
+  <div class="note red">
+    <b class="h">Granularity dependence: not supported.</b> Agent gains on fine vs coarse queries
+    (+14.4 vs +11.2) are within noise (z=0.52). The agent helps significantly on both.
+  </div>
+</div></section>
+
+<footer><div class="wrap">
+  <h3 class="block" style="margin-top:0">Limitations</h3>
+  <p style="max-width:820px">Match sets are complete only relative to the released pools
+  (199–933 videos/source); a human edge audit and the Charades-STA natural-query control are
+  planned; the frontier-agent arm uses a proprietary assistant (prompt and all 259 trajectories
+  released); MOMA was excluded after failing the caption-faithfulness gate at every captioner
+  setting tried (0.81–0.87) — a documented VLM ceiling on sports on-screen text.</p>
+  <h3 class="block">Citation</h3>
+  <pre class="bib">@article{amber2026,
+  title   = {AMBER: Measuring the Ambiguity Penalty in Corpus-Level Video Moment Retrieval},
+  author  = {ClipCrawl Team},
+  year    = {2026},
+  note    = {Under review}
+}</pre>
+  <p class="mono" style="color:var(--mut2);font-size:12px;margin-top:26px">
+  AMBER · ClipCrawl · all frames shown are from the released corpus records</p>
+</div></footer>
+
+<script>
+/* ---------------- problem fan ---------------- */
+(function(){
+  var svg=document.getElementById('fansvg'); if(!svg) return;
+  var cx=60,cy=165,N=13,gold=6,s='';
+  for(var k=0;k<N;k++){var y=20+k*(290/(N-1)),x=430+(k%2)*28,g=(k===gold);
+    s+='<line x1="'+(cx+16)+'" y1="'+cy+'" x2="'+(x-22)+'" y2="'+y+'" stroke="'+(g?'#c1780f':'#cc3b28')+'" stroke-width="'+(g?2:1)+'" opacity="'+(g?.95:.3)+'"/>';}
+  for(var k2=0;k2<N;k2++){var y2=20+k2*(290/(N-1)),x2=430+(k2%2)*28,g2=(k2===gold);
+    s+='<circle cx="'+x2+'" cy="'+y2+'" r="'+(g2?8:5.5)+'" fill="'+(g2?'#c1780f':'#fff')+'" stroke="'+(g2?'#c1780f':'#cc3b28')+'" stroke-width="1.5"/>';
+    if(g2) s+='<text x="'+(x2+14)+'" y="'+(y2+4)+'" fill="#c1780f">gold</text>';
+    else if(k2===5) s+='<text x="'+(x2+12)+'" y="'+(y2+4)+'" fill="#cc3b28" opacity=".85">also correct</text>';}
+  s+='<circle cx="'+cx+'" cy="'+cy+'" r="16" fill="#fff" stroke="#c1780f" stroke-width="2"/>'+
+     '<text x="'+cx+'" y="'+(cy+5)+'" text-anchor="middle" fill="#c1780f" font-weight="700">?</text>'+
+     '<text x="'+cx+'" y="'+(cy+38)+'" text-anchor="middle" fill="#6d6350">query</text>';
+  svg.innerHTML=s;
+})();
+
+/* ---------------- demo explorer ---------------- */
+var DEMOS=[];
+fetch('demos.json').then(function(r){return r.json()}).then(function(d){DEMOS=d;initDemo()})
+  .catch(function(){document.getElementById('demo').style.display='none'});
+function initDemo(){
+  var tabs=document.getElementById('qtabs'),qtext=document.getElementById('qtext'),
+      qmeta=document.getElementById('qmeta'),moments=document.getElementById('moments'),
+      dfoot=document.getElementById('dfoot');
+  var srcName={charades_fig:'CHARADES',didemo:'DIDEMO',moma:'MOMA'};
+  DEMOS=DEMOS.filter(function(d){return d.source!=='moma'});
+  DEMOS.forEach(function(d,i){
+    var t=document.createElement('div');t.className='qtab'+(i===0?' act':'');
+    t.innerHTML='<span class="src">'+(srcName[d.source]||d.source)+'</span> · '+
+      d.query.slice(0,34)+(d.query.length>34?'…':'');
+    t.onclick=function(){var a=document.querySelectorAll('.qtab');
+      for(var j=0;j<a.length;j++)a[j].classList.remove('act');
+      t.classList.add('act');render(i)};
+    tabs.appendChild(t);
+  });
+  function provClass(m){return m.indexOf('anchor')===0?'anchor':m.indexOf('merge')===0?'merge':'scan'}
+  function provLabel(m){return m==='anchor'?'★ ANCHOR (seed event)':m.indexOf('merge')===0?
+    '⇄ MERGE (equivalent query)':'⌕ '+m.toUpperCase()+' (entailment scan)'}
+  function esc(x){return (x||'').replace(/&/g,'&amp;').replace(/</g,'&lt;')}
+  function render(i){
+    var d=DEMOS[i];
+    qtext.textContent='“'+d.query+'”';
+    qmeta.innerHTML='<span class="chip big">ambiguity_size = '+d.ambiguity_size+'</span>'+
+      '<span class="chip">'+d.granularity+'</span>'+
+      d.tracks.map(function(t){return '<span class="chip trk">'+t+'-track</span>'}).join('')+
+      '<span class="chip">source · '+(srcName[d.source]||d.source)+'</span>';
+    moments.innerHTML='';
+    d.edges.forEach(function(e){
+      var c=document.createElement('div');c.className='mcard';
+      c.innerHTML='<div class="imwrap"><span class="vtag">'+esc(e.video.length>16?e.video.slice(0,14)+'…':e.video)+'</span>'+
+        '<img src="'+e.img+'" loading="lazy" alt=""><span class="span">'+e.span[0]+'s–'+e.span[1]+'s</span></div>'+
+        '<div class="mbody"><div class="prov '+provClass(e.mined_by)+'">'+provLabel(e.mined_by)+'</div>'+
+        '<div class="cap">'+esc(e.caption)+(e.caption.length>=158?'…':'')+'</div></div>';
+      moments.appendChild(c);
+    });
+    var more=d.ambiguity_size-d.edges.length;
+    dfoot.innerHTML='<span>showing '+d.edges.length+' of '+d.ambiguity_size+
+      ' verified moments · every cross-video edge passed the pixel gate</span>'+
+      (more>0?'<span class="more">+ '+more+' more in the C-track match set</span>':'');
+  }
+  if(DEMOS.length)render(0);
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,298 @@
+[
+ {
+  "source": "charades_fig",
+  "query": "A person enters a room through a door.",
+  "granularity": "coarse",
+  "ambiguity_size": 38,
+  "tracks": [
+   "C"
+  ],
+  "edges": [
+   {
+    "video": "IUETR",
+    "span": [
+     4.0,
+     8.1
+    ],
+    "mined_by": "anchor",
+    "caption": "A person wearing a white t-shirt with the number 15 on the back and a black cap walks through an interior doorway and into a room.",
+    "img": "assets/charades_fig_0_0.jpg"
+   },
+   {
+    "video": "FTYFA",
+    "span": [
+     0.0,
+     6.0
+    ],
+    "mined_by": "merge",
+    "caption": "A man enters a room through a doorway, stepping inside from a brightly lit exterior, and then walks further into the room.",
+    "img": "assets/charades_fig_0_1.jpg"
+   },
+   {
+    "video": "YFJ9U",
+    "span": [
+     13.9,
+     30.3
+    ],
+    "mined_by": "merge",
+    "caption": "A person carrying a large cardboard box walks down a narrow hallway toward a brightly lit doorway, then opens the door and steps outside.",
+    "img": "assets/charades_fig_0_2.jpg"
+   },
+   {
+    "video": "2U3X0",
+    "span": [
+     0.0,
+     4.1
+    ],
+    "mined_by": "merge",
+    "caption": "A man holding a box walks toward a white door, opens it, and steps through into a darker room.",
+    "img": "assets/charades_fig_0_3.jpg"
+   }
+  ]
+ },
+ {
+  "source": "charades_fig",
+  "query": "A person moves around a stove and counter in a kitchen.",
+  "granularity": "coarse",
+  "ambiguity_size": 37,
+  "tracks": [
+   "C"
+  ],
+  "edges": [
+   {
+    "video": "CS7HY",
+    "span": [
+     16.2,
+     30.9
+    ],
+    "mined_by": "anchor",
+    "caption": "A person in a kitchen stands at the stove, interacting with the stovetop and countertop area across the frames.",
+    "img": "assets/charades_fig_1_0.jpg"
+   },
+   {
+    "video": "Q0IHP",
+    "span": [
+     30.6,
+     35.2
+    ],
+    "mined_by": "scan:rank1",
+    "caption": "A person in a kitchen moves from the counter toward the stove, then turns and walks away, leaving a pot on the stove.",
+    "img": "assets/charades_fig_1_1.jpg"
+   },
+   {
+    "video": "EXW9K",
+    "span": [
+     22.0,
+     32.5
+    ],
+    "mined_by": "scan:rank2",
+    "caption": "A person moves quickly across a kitchen, then stands at the stove, appearing to interact with items on the counter or stove top.",
+    "img": "assets/charades_fig_1_2.jpg"
+   },
+   {
+    "video": "8TSU4",
+    "span": [
+     0.0,
+     12.6
+    ],
+    "mined_by": "scan:rank3",
+    "caption": "A person in a kitchen moves from the counter to the stove, then opens the refrigerator.",
+    "img": "assets/charades_fig_1_3.jpg"
+   }
+  ]
+ },
+ {
+  "source": "didemo",
+  "query": "Performers play instruments on a stage while an audience watches.",
+  "granularity": "coarse",
+  "ambiguity_size": 35,
+  "tracks": [
+   "C"
+  ],
+  "edges": [
+   {
+    "video": "10288162@N07_8448571587_222383db1c.mov",
+    "span": [
+     0.0,
+     31.0
+    ],
+    "mined_by": "scan:rank3",
+    "caption": "A band performs on a brightly lit stage in front of a large, silhouetted audience. Throughout the segment, the musicians, including a central guitarist in a hat",
+    "img": "assets/didemo_2_0.jpg"
+   },
+   {
+    "video": "85142239@N00_6132082144_2e79dc0281.mov",
+    "span": [
+     0.0,
+     17.2
+    ],
+    "mined_by": "scan:rank5",
+    "caption": "A small band performs on a stage decorated with string lights, while an audience watches from the foreground. The camera gradually zooms in on the performers, e",
+    "img": "assets/didemo_2_1.jpg"
+   },
+   {
+    "video": "78658921@N00_5223577634_1ab6599a7e.mp4",
+    "span": [
+     8.9,
+     29.7
+    ],
+    "mined_by": "scan:rank10",
+    "caption": "A musician in a cowboy hat and vest stands atop a stage, playing a trumpet and gesturing to the audience, while other band members play instruments and interact",
+    "img": "assets/didemo_2_2.jpg"
+   },
+   {
+    "video": "51035693821@N01_7705385910_3029ccc056.",
+    "span": [
+     42.9,
+     47.7
+    ],
+    "mined_by": "scan:rank16",
+    "caption": "A performer in a yellow suit stands atop a large drum on a stage, while another performer on a raised platform behind him manipulates a long pole to suspend a v",
+    "img": "assets/didemo_2_3.jpg"
+   }
+  ]
+ },
+ {
+  "source": "didemo",
+  "query": "People are moving slightly in a crowded indoor space.",
+  "granularity": "coarse",
+  "ambiguity_size": 31,
+  "tracks": [
+   "C"
+  ],
+  "edges": [
+   {
+    "video": "7390466@N06_5140332270_b09a133756.wmv",
+    "span": [
+     41.2,
+     47.1
+    ],
+    "mined_by": "anchor",
+    "caption": "A dense crowd of people is gathered in an indoor hall, mostly standing and moving slightly within the space.",
+    "img": "assets/didemo_3_0.jpg"
+   },
+   {
+    "video": "64184609@N00_5604252106_4f1dd059c2.mov",
+    "span": [
+     29.9,
+     37.9
+    ],
+    "mined_by": "scan:rank3",
+    "caption": "The camera pans across a crowded indoor public space, moving from right to left, revealing more people and activity as it progresses.",
+    "img": "assets/didemo_3_1.jpg"
+   },
+   {
+    "video": "12572907@N00_2920226432_717b272a78.avi",
+    "span": [
+     50.1,
+     54.3
+    ],
+    "mined_by": "scan:rank4",
+    "caption": "A group of people are standing and moving slowly in a dimly lit indoor space with red and colored lighting, suggesting they are at a social gathering or event.",
+    "img": "assets/didemo_3_2.jpg"
+   },
+   {
+    "video": "24311648@N00_2640452892_2d8cfc2b98.avi",
+    "span": [
+     0.0,
+     4.8
+    ],
+    "mined_by": "scan:rank6",
+    "caption": "A crowd of people moves through a brightly lit indoor corridor, with some individuals walking past a railing and others standing or interacting near a counter o",
+    "img": "assets/didemo_3_3.jpg"
+   }
+  ]
+ },
+ {
+  "source": "moma",
+  "query": "Someone gets a beard and neck trimmed while sitting in a chair.",
+  "granularity": "coarse",
+  "ambiguity_size": 40,
+  "tracks": [
+   "C"
+  ],
+  "edges": [
+   {
+    "video": "ULtFf9o_M70",
+    "span": [
+     93.8,
+     140.7
+    ],
+    "mined_by": "anchor",
+    "caption": "A barber uses an electric trimmer to shave a man's beard and neckline while he sits in a barber's chair.",
+    "img": "assets/moma_4_0.jpg"
+   },
+   {
+    "video": "n20ETYZEB-8",
+    "span": [
+     410.5,
+     416.6
+    ],
+    "mined_by": "merge",
+    "caption": "A barber uses electric clippers to trim a customer's beard while the customer sits in a salon chair.",
+    "img": "assets/moma_4_1.jpg"
+   },
+   {
+    "video": "L8CDgMF0e-0",
+    "span": [
+     493.9,
+     508.0
+    ],
+    "mined_by": "merge",
+    "caption": "A barber uses a red electric trimmer to cut the hair and beard of a customer who is reclined in a barber's chair.",
+    "img": "assets/moma_4_2.jpg"
+   }
+  ]
+ },
+ {
+  "source": "moma",
+  "query": "One player strikes the ball while the other prepares to return it across the table.",
+  "granularity": "coarse",
+  "ambiguity_size": 39,
+  "tracks": [
+   "C"
+  ],
+  "edges": [
+   {
+    "video": "Cwzk_GpDdWY",
+    "span": [
+     679.0,
+     686.6
+    ],
+    "mined_by": "anchor",
+    "caption": "Two table tennis players are engaged in a rally. The player in the red shirt, positioned at the near table, prepares to hit the ball, while his opponent in the ",
+    "img": "assets/moma_5_0.jpg"
+   },
+   {
+    "video": "CgnXIsg3pPA",
+    "span": [
+     75.0,
+     93.0
+    ],
+    "mined_by": "merge",
+    "caption": "Two table tennis players compete on a red court, exchanging shots across a blue table. The player in red hits the ball, and the player in black prepares to retu",
+    "img": "assets/moma_5_1.jpg"
+   },
+   {
+    "video": "ei4xpbNydFM",
+    "span": [
+     48.3,
+     84.6
+    ],
+    "mined_by": "scan:rank2",
+    "caption": "Two table tennis players compete in a match, hitting the ball back and forth across the table. In one instance, a player falls to the floor after a shot, while ",
+    "img": "assets/moma_5_2.jpg"
+   },
+   {
+    "video": "pWu8kQ3ic_E",
+    "span": [
+     24.0,
+     83.9
+    ],
+    "mined_by": "scan:rank26",
+    "caption": "Two people play table tennis in a room with red flooring and light blue walls. They hit a ball back and forth across a table, moving around it to return shots.",
+    "img": "assets/moma_5_3.jpg"
+   }
+  ]
+ }
+]
