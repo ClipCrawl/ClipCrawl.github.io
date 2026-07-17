@@ -676,15 +676,15 @@ similarity. Return JSON
 <section id="method" style="background:var(--bg2)"><div class="wrap">
   <span class="sec-tag c2">The method</span>
   <h2>An agentic loop that pays for pixels only where they matter.</h2>
-  <p class="sub">A VLM policy over a cost-metered tool registry, with an episodic memory shared
+  <p class="sub">A VLM policy over a tool registry, with an episodic memory shared
   across queries — because AMBER's match sets expose exactly which queries share moments.</p>
 
   <div class="loop">
     <div class="lp"><div class="t">state</div>
-      <p>query · CLIP shortlist · observations so far · <span class="amber mono">budget ledger</span></p></div>
+      <p>query · CLIP shortlist · observations so far · <span class="amber mono">verify calls used so far</span></p></div>
     <div class="lp"><div class="t">VLM policy</div>
       <p>reads the state, picks the next tool — or stops and answers.</p></div>
-    <div class="lp"><div class="t">tool registry (cost class)</div>
+    <div class="lp"><div class="t">tool registry</div>
       <div class="toolgrid">
         <div class="tool"><div class="cmd">/clip</div><div class="r">shortlist</div></div>
         <div class="tool"><div class="cmd">/caption</div><div class="r">describe</div></div>
@@ -701,14 +701,14 @@ similarity. Return JSON
 
   <h3 class="block">What each tool actually runs</h3>
   <div class="tbl-wrap"><table>
-    <thead><tr><th>tool</th><th>backing computation</th><th>cost class</th></tr></thead>
+    <thead><tr><th>tool</th><th>backing computation</th></tr></thead>
     <tbody>
-      <tr><td class="mono">/clip</td><td>cosine over cached CLIP ViT-L/14 frame features (0.5 fps, mean-pooled per event) — the source pool is pre-indexed</td><td class="tnum">1</td></tr>
-      <tr><td class="mono">/caption</td><td>Qwen3-VL-8B describes 3 sampled frames of one event</td><td class="tnum">2</td></tr>
-      <tr><td class="mono">/verify</td><td>Qwen2.5-VL-3B yes/no logit contrast: p(match) = softmax(z<sub>yes</sub>, z<sub>no</sub>) over 3-frame chunks of the event, max-pooled — the single most informative and most expensive call</td><td class="tnum">4</td></tr>
-      <tr><td class="mono">/ground</td><td>snap the answer span to the event boundaries from construction-independent segmentation</td><td class="tnum">2</td></tr>
-      <tr><td class="mono">/memory</td><td>RepoMem recall/write (next section) — query-conditional verdicts, gated reuse</td><td class="tnum">0</td></tr>
-      <tr><td class="mono">/abstain</td><td>stop when best p(match) stays under a calibrated floor — answer “not in this repo”</td><td class="tnum">0</td></tr>
+      <tr><td class="mono">/clip</td><td>cosine over cached CLIP ViT-L/14 frame features (0.5 fps, mean-pooled per event) — the source pool is pre-indexed</td></tr>
+      <tr><td class="mono">/caption</td><td>Qwen3-VL-8B describes 3 sampled frames of one event</td></tr>
+      <tr><td class="mono">/verify</td><td>Qwen2.5-VL-3B yes/no logit contrast: p(match) = softmax(z<sub>yes</sub>, z<sub>no</sub>) over 3-frame chunks of the event, max-pooled — the single most informative and most expensive call</td></tr>
+      <tr><td class="mono">/ground</td><td>snap the answer span to the event boundaries from construction-independent segmentation</td></tr>
+      <tr><td class="mono">/memory</td><td>RepoMem recall/write (next section) — query-conditional verdicts, gated reuse</td></tr>
+      <tr><td class="mono">/abstain</td><td>stop when best p(match) stays under a calibrated floor — answer “not in this repo”</td></tr>
     </tbody>
   </table></div>
   <p class="sub" style="margin-top:10px;margin-bottom:26px">Measured on the held-out test stream: the
@@ -725,15 +725,15 @@ similarity. Return JSON
     <div class="ep">
       <div class="qt"><b>QUERY A</b><br>“A person sits at a table and rotates a hairdryer.”</div>
       <div class="trace">
-        <span class="tool">/clip</span> → top-5, Δscore &lt; 0.013 (look-alikes) <span class="cost">+1</span><br>
-        <span class="memc">/memory recall</span> → miss <span class="cost">+0</span><br>
-        <span class="tool">/verify</span> rank 1: table ✓ but a <b>mixing bowl</b> <span class="bad">⇒ reject</span> <span class="cost">+4</span>
+        <span class="tool">/clip</span> → top-5, Δscore &lt; 0.013 (look-alikes)<br>
+        <span class="memc">/memory recall</span> → miss<br>
+        <span class="tool">/verify</span> rank 1: table ✓ but a <b>mixing bowl</b> <span class="bad">⇒ reject</span>
         <div class="epframes"><img src="assets/agent_bowl.jpg" alt="CLIP top-1: a person at a table with a mixing bowl — rejected"></div>
-        <span class="tool">/verify</span> rank 3: “turns a black/blue hair dryer” <span class="ok">⇒ match .85</span> <span class="cost">+4</span>
+        <span class="tool">/verify</span> rank 3: “turns a black/blue hair dryer” <span class="ok">⇒ match .85</span>
         <div class="epframes"><img src="assets/agent_dryer.jpg" alt="Rank 3: a person rotating a hairdryer — accepted"></div>
-        <span class="tool">/ground</span> → span (10.2, 20.4)s <span class="cost">+2</span><br>
+        <span class="tool">/ground</span> → span (10.2, 20.4)s<br>
         <span class="memc">/memory write</span> (735W9, 10.2–20.4) ↦ match, .85<br>
-        <span class="ans">answer</span> (735W9, 10.2–20.4s) · spent 11
+        <span class="ans">answer</span> (735W9, 10.2–20.4s)
       </div>
     </div>
     <div class="membus"><span>write ↴</span><div class="pill">memory</div><span>↳ read</span></div>
@@ -742,11 +742,11 @@ similarity. Return JSON
       “Someone wearing a pink hooded top and eyeglasses is seated at a table, closely inspecting
       a black and blue portable gadget.”</div>
       <div class="trace">
-        <span class="tool">/clip</span> → shortlist; 735W9 present <span class="cost">+1</span><br>
+        <span class="tool">/clip</span> → shortlist; 735W9 present<br>
         <span class="memc">/memory recall</span> → <b>HIT</b>: (735W9, 10.2–20.4)<br>
         <span style="color:var(--mut2)">reuse gate: verified verdict, conf .85 ≥ τ, moment consistent
         with the query ⇒ reuse, <b>no re-verification</b></span><br>
-        <span class="ans">answer</span> (735W9, 10.2–20.4s) · spent 1
+        <span class="ans">answer</span> (735W9, 10.2–20.4s)
       </div>
       <div class="amortize">2 tool calls instead of 6 — perception amortized across the ambiguity edge.</div>
     </div>
