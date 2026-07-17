@@ -279,41 +279,11 @@ pre.bib{background:var(--bg2);border:1px solid var(--line);border-radius:10px;pa
   </div>
 
   <h3 class="block">Construction — caption-driven, pixel-gated</h3>
-  <div class="pipe">
-    <div class="stage"><div class="st">1 · SEGMENT + CAPTION</div><h4>Describe events</h4>
-      <svg viewBox="0 0 120 34"><rect x="4" y="8" width="112" height="18" rx="2" fill="none" stroke="#b9ad92"/>
-      <rect x="4" y="8" width="36" height="18" fill="none" stroke="#b9ad92"/><rect x="42" y="8" width="36" height="18" fill="none" stroke="#b9ad92"/></svg>
-      <p>Content-adaptive event segmentation; one local-VLM caption per event. Captions are the sole semantic medium.</p></div>
-    <div class="stage"><div class="st">2 · GENERATE</div><h4>Query from caption</h4>
-      <svg viewBox="0 0 120 34"><rect x="14" y="4" width="92" height="24" rx="5" fill="#f6efe0" stroke="#c1780f"/>
-      <text x="60" y="20" text-anchor="middle" font-family="monospace" font-size="8" fill="#8a5410">“enters through a door”</text></svg>
-      <p>An LLM writes coarse + fine queries — never reusing 3 consecutive caption words, so matching stays semantic.</p></div>
-    <div class="stage"><div class="st">3 · MERGE</div><h4>Discover ambiguity</h4>
-      <svg viewBox="0 0 120 34"><circle cx="18" cy="17" r="6" fill="#c1780f"/>
-      <rect x="62" y="4" width="12" height="9" fill="#fff" stroke="#999"/><rect x="62" y="21" width="12" height="9" fill="#fff" stroke="#999"/>
-      <line x1="25" y1="15" x2="61" y2="8" stroke="#999" stroke-dasharray="3 2"/><line x1="25" y1="19" x2="61" y2="25" stroke="#999" stroke-dasharray="3 2"/></svg>
-      <p>Near-identical queries from different videos merge — two events spawning the same query <i>are</i> an ambiguity edge.</p></div>
-    <div class="stage"><div class="st">4 · CORPUS SCAN</div><h4>Entailment sweep</h4>
-      <svg viewBox="0 0 120 34"><circle cx="14" cy="17" r="6" fill="#c1780f"/>
-      <rect x="52" y="2" width="11" height="8" fill="#fff" stroke="#999"/><rect x="52" y="13" width="11" height="8" fill="#f3e3c4" stroke="#c1780f"/>
-      <rect x="52" y="24" width="11" height="8" fill="#fff" stroke="#999"/><rect x="82" y="13" width="11" height="8" fill="#fff" stroke="#999"/>
-      <line x1="20" y1="15" x2="51" y2="6" stroke="#999" stroke-dasharray="3 2"/><line x1="20" y1="17" x2="51" y2="17" stroke="#999" stroke-dasharray="3 2"/>
-      <line x1="20" y1="19" x2="51" y2="28" stroke="#999" stroke-dasharray="3 2"/><line x1="20" y1="17" x2="81" y2="17" stroke="#999" stroke-dasharray="3 2"/></svg>
-      <p>Each query is checked against <b>every</b> caption in the corpus (BM25 → LLM entailment, k=200) → the full text-space match set.</p></div>
-    <div class="stage"><div class="st">5 · PIXEL GATE</div><h4>Verify every edge</h4>
-      <svg viewBox="0 0 120 34"><circle cx="14" cy="17" r="6" fill="#c1780f"/>
-      <line x1="20" y1="14" x2="52" y2="6" stroke="#3f8a2c" stroke-width="1.6"/><text x="34" y="8" font-size="8" fill="#3f8a2c">✓</text>
-      <line x1="20" y1="17" x2="52" y2="17" stroke="#3f8a2c" stroke-width="1.6"/><text x="34" y="15" font-size="8" fill="#3f8a2c">✓</text>
-      <line x1="20" y1="20" x2="52" y2="28" stroke="#cc3b28" stroke-width="1.4" stroke-dasharray="3 2"/><text x="34" y="30" font-size="8" fill="#cc3b28">✕</text>
-      <rect x="53" y="2" width="11" height="8" fill="#f3e3c4" stroke="#c1780f"/><rect x="53" y="13" width="11" height="8" fill="#fff" stroke="#999"/>
-      <rect x="53" y="24" width="11" height="8" fill="#fff" stroke="#999" opacity=".4"/></svg>
-      <p>A VLM re-checks every edge on real frames — <b>including the anchor</b>. A failed anchor drops the whole query (gate-<i>all</i>).</p></div>
-    <div class="stage out"><div class="st" style="color:var(--amber)">6 · RELEASE</div><h4>Dual-track record</h4>
-      <svg viewBox="0 0 120 34"><rect x="8" y="4" width="104" height="26" rx="4" fill="#fff" stroke="#c1780f"/>
-      <text x="60" y="15" text-anchor="middle" font-family="monospace" font-size="7.5" fill="#25211a">query + match set M</text>
-      <text x="60" y="25" text-anchor="middle" font-family="monospace" font-size="7.5" fill="#8a5410">{(vid, tₛ, tₑ)} · tracks U/C</text></svg>
-      <p>Video-disjoint splits, checksummed manifest, metric unit tests, per-arm predictions.</p></div>
-  </div>
+  <p class="sub">Candidate matches are mined in caption space (text is cheap to search); nothing
+  ships unless a VLM re-confirms it on frames from the actual span — anchors included, fail-closed.
+  The complete stage-by-stage build, with every intermediate artifact verbatim and a real
+  five-video match set followed from raw video to released record, is in
+  <a href="#construction">Construction, below</a>.</p>
 
   <h3 class="block">The two tracks</h3>
   <div class="cards">
@@ -413,89 +383,196 @@ pre.bib{background:var(--bg2);border:1px solid var(--line);border-radius:10px;pa
 </div></section>
 
 
-<!-- ================= CONSTRUCTION WALKTHROUGH ================= -->
+<!-- ================= CONSTRUCTION ================= -->
 <section id="construction"><div class="wrap">
-  <span class="sec-tag">Construction, step by step</span>
-  <h2>One query, end to end — with the real data.</h2>
-  <p class="sub">Every artifact below is copied verbatim from the released files. We follow the
-  moment <span class="mono">735W9 @ 10.2–20.4s</span> from raw video to released record.</p>
+  <span class="sec-tag">Construction — caption-driven, pixel-gated</span>
+  <h2>How a record is built — every stage, with the real artifacts.</h2>
+  <p class="sub">Two principles. <b>Captions are the working medium</b>: text is cheap to search, so
+  candidate mining happens in caption space. <b>Pixels are the authority</b>: no edge ships unless a
+  VLM re-confirms it on frames from the actual span — anchors included, fail-closed. One local
+  Qwen3-VL-8B serves every role (caption, query-gen, merge judge, scan judge, pixel gate), fully
+  offline on a single A100 — 8.1&nbsp;h for all of Charades-FIG. Every artifact below is verbatim
+  from the released run files.</p>
 
-  <h3 class="block">Stage 0–1 · segment &amp; caption</h3>
+  <div class="tbl-wrap" style="margin-top:18px"><table>
+    <thead><tr><th colspan="7">The Charades-FIG funnel (one of three sources, real counts)</th></tr></thead>
+    <tbody><tr class="mono" style="font-size:12.5px">
+      <td>933 videos</td><td>→ 2,391 events</td><td>→ 4,754 queries</td>
+      <td>→ 1,200 after merge</td><td>→ +2,892 scan edges</td>
+      <td>→ pixel gate −9.3% edges, −31 anchors</td><td>→ <b>1,169 records</b> → 375 stratified into v1</td>
+    </tr></tbody>
+  </table></div>
+
+  <h3 class="block">Stage 0 · event segmentation — calibrated change-points</h3>
   <div class="cards">
-    <div class="card"><div class="t" style="color:var(--amber)">input · event segment</div>
-      <h4>735W9, event e2 (10.2–20.4s)</h4>
-      <div style="display:flex;gap:10px;margin:10px 0"><img src="assets/agent_dryer.jpg" alt="frame from 735W9 event e2"
-        style="height:86px;border-radius:8px;border:1px solid var(--line)"></div>
-      <p>Videos are cut at CLIP-feature change-points (calibrated to ~8–12s median). 3–8 frames
-      per event are sampled head/mid/tail.</p></div>
-    <div class="card"><div class="t" style="color:var(--amber)">output · caption (Qwen3-VL-8B, verbatim)</div>
-      <h4 style="font-family:var(--serif);font-style:italic;font-weight:500;font-size:16.5px">
-      “A person in a pink hoodie and glasses is seated at a wooden table, holding and manipulating
-      a black and blue hairdryer, rotating it in their hands.”</h4>
-      <p>Captions are the sole semantic medium downstream — which is why they are audited
-      (independent-family judge, 2 rounds, gate ≥ 0.90) and withheld from the evaluation release.</p></div>
+    <div class="card"><div class="t" style="color:var(--amber)">mechanism</div>
+      <h4>Cosine dip below a per-source calibrated threshold</h4>
+      <p>Consecutive-frame CLIP similarity dips below a threshold ⇒ boundary. The threshold is not
+      hand-picked: bisection over [0.5,&nbsp;0.999] targets a <b>median event length of 8–12&nbsp;s</b>
+      (min 4&nbsp;s merged, max 60&nbsp;s split). Charades-FIG calibrated to
+      <span class="mono">thr=0.874, median 8.4&nbsp;s</span>. Each event then gets 3–8 interior
+      frames (<span class="mono">n = ceil(dur/4), clipped to [3,8]</span>) — the same frames every
+      later stage will see.</p></div>
+    <div class="card"><div class="t" style="color:var(--amber)">example · video 735W9 → three events</div>
+      <div style="display:flex;gap:8px;margin:10px 0 8px">
+        <figure style="margin:0;text-align:center"><img src="assets/cons_735W9_e0.jpg" alt="735W9 event e0" style="height:74px;border-radius:6px;border:1px solid var(--line)"><figcaption class="mono" style="font-size:10.5px;margin-top:3px">e0&nbsp;0.0–6.1s</figcaption></figure>
+        <figure style="margin:0;text-align:center"><img src="assets/cons_735W9_e1.jpg" alt="735W9 event e1" style="height:74px;border-radius:6px;border:1px solid var(--line)"><figcaption class="mono" style="font-size:10.5px;margin-top:3px">e1&nbsp;6.1–10.2s</figcaption></figure>
+        <figure style="margin:0;text-align:center"><img src="assets/cons_735W9_e2.jpg" alt="735W9 event e2" style="height:74px;border-radius:6px;border:1px solid var(--line)"><figcaption class="mono" style="font-size:10.5px;margin-top:3px">e2&nbsp;10.2–20.4s</figcaption></figure>
+      </div>
+      <p>One 30-second Charades clip becomes three events. e2 — the hairdryer moment — is the
+      anchor we follow to release below.</p></div>
   </div>
 
-  <h3 class="block">Stage 2 · query generation (actual generator output)</h3>
+  <h3 class="block">Stage 1 · captioning — the sole semantic medium</h3>
+  <div class="cards">
+    <div class="card"><div class="t" style="color:var(--amber)">mechanism</div>
+      <h4>Qwen3-VL-8B, one caption per event</h4>
+      <p>Prompt rules: 1–2 sentences of <i>action</i> description; read on-screen text before
+      guessing; never invent brand or device names; no speculation. 512-px thumbnails of the 3–8
+      interior frames. Captions are audited (100-sample faithfulness: 0.96 raw round-1, 1.0 after
+      recheck; later an independent-family judge confirms 89.8% of shipped edges) and are
+      <b>withheld from the evaluation release</b> — systems never see them.</p></div>
+    <div class="card"><div class="t" style="color:var(--amber)">example · the three captions, verbatim</div>
+      <p style="font-size:13px;line-height:1.65"><span class="mono">e0</span> — “A person in a pink hoodie and glasses holds a large,
+      dark-colored cylindrical object with a blue section, rotating it while seated at a wooden table.”<br>
+      <span class="mono">e1</span> — “A person in a pink hoodie and glasses sits at a table, holding and
+      examining a black and blue handheld device, likely a handheld vacuum or similar appliance,
+      while looking down at it.”<br>
+      <span class="mono">e2</span> — “A person in a pink hoodie and glasses is seated at a wooden table,
+      holding and manipulating a black and blue hairdryer, rotating it in their hands.”</p>
+      <p>Note the captioner hedging on e1 (“likely a handheld vacuum”) — exactly the ambiguity the
+      pixel gate and cross-family audit exist to police.</p></div>
+  </div>
+
+  <h3 class="block">Stage 2 · query generation — anti-parroting, measured</h3>
   <div class="tbl-wrap"><table>
-    <thead><tr><th>granularity</th><th>generated query (verbatim)</th><th>3-gram overlap w/ caption</th></tr></thead>
+    <thead><tr><th>anchor event</th><th>granularity</th><th>generated query (verbatim)</th><th>trigram overlap</th></tr></thead>
     <tbody>
-      <tr><td>fine</td><td style="font-weight:400">“Someone wearing a pink hooded top and eyeglasses sits at a wooden
-        surface, turning a black and blue hairdryer in their hands.”</td><td class="tnum">0.25</td></tr>
-      <tr><td>coarse</td><td style="font-weight:400">“A person sits at a table and rotates a hairdryer.”</td><td class="tnum">0.00</td></tr>
+      <tr><td class="mono">XJA7Z_e0</td><td>fine</td><td style="font-weight:400">“A person inside a kitchen area holds a glass bottle to their lips and sips, then sets it down and uses their hand to touch their mouth.”</td><td class="tnum">0.04</td></tr>
+      <tr><td class="mono">XJA7Z_e0</td><td>coarse</td><td style="font-weight:400">“Someone drinks from a bottle then lowers it and touches their mouth.”</td><td class="tnum">0.40</td></tr>
+      <tr><td class="mono">735W9_e2</td><td>fine</td><td style="font-weight:400">“Someone wearing a pink hooded top and eyeglasses sits at a wooden surface, turning a black and blue hairdryer in their hands.”</td><td class="tnum">0.25</td></tr>
+      <tr><td class="mono">735W9_e2</td><td>coarse</td><td style="font-weight:400">“A person sits at a table and rotates a hairdryer.”</td><td class="tnum">0.00</td></tr>
     </tbody>
   </table></div>
-  <p class="sub" style="margin-top:12px">The generator is forbidden from reusing 3 consecutive caption
-  words (measured overlap shown) — downstream matching must be semantic, not lexical. Hardened-prompt
-  ablation cut mean overlap from 0.143 to 0.088.</p>
+  <p class="sub" style="margin-top:12px">≤1 fine + ≤1 coarse query per event. <b>Fine</b> keeps
+  discriminative details (appearance, place, manner, order); <b>coarse</b> keeps only the action
+  skeleton. The anti-parroting control is two-layer and honest about being soft: the prompt bans
+  reusing 3 consecutive caption words, and every query’s <b>measured trigram-overlap ratio</b>
+  (fraction of query word-trigrams appearing verbatim in the caption) is stored; queries above 0.6
+  are hard-rejected. Corpus mean 0.108 — the 0.40 row above shows the control is a measured ceiling,
+  not a guarantee of zero, which is why the number ships with every query.</p>
 
-  <h3 class="block">Stage 3–4 · merge + corpus scan (a real scan hit)</h3>
+  <h3 class="block">Stage 3 · merge — ambiguity found before searching</h3>
   <div class="cards">
-    <div class="card"><div class="t" style="color:var(--cyan)">merge — ambiguity by construction</div>
-      <h4>Same query from different videos ⇒ edge</h4>
-      <p>When two events independently generate equivalent queries, they merge into one record and
-      become each other's matches — no labeling step. In practice merge fires rarely
-      (~44 pair-judgments/source); the scan below is the recall workhorse.</p></div>
-    <div class="card"><div class="t" style="color:var(--green)">scan — entailment over every caption</div>
-      <h4>Real scanned edges of the fine query</h4>
-      <p class="mono" style="font-size:12px;line-height:1.8">
-      anchor&nbsp;&nbsp;&nbsp;&nbsp;735W9 [6.1–10.2] · vis_conf .95<br>
-      scan:rank3&nbsp;735W9 [10.2–20.4] · llm_conf .95 · vis_conf .95<br>
-      scan:rank9&nbsp;735W9 [0.0–6.1] · llm_conf .95 · vis_conf .95</p>
-      <p>BM25 shortlist (k=200) → directional entailment (“does this described event satisfy the
-      query?”), ≤40 judgments per query. Here the scan discovered the adjacent moments of the same
-      activity — including the hairdryer moment that another query owns as anchor.</p></div>
+    <div class="card"><div class="t" style="color:var(--cyan)">mechanism</div>
+      <h4>Same query from different videos ⇒ one record</h4>
+      <p>Sentence-embedding neighbors (cos ≥ 0.88, same granularity, top-10 peers per query) go to
+      an LLM equivalence judge — “same kind of moment, same constraints?” A failed judgment counts
+      as <i>not-same</i>: the pipeline under-merges rather than hallucinating equivalence. Union-find
+      components collapse 4,754 raw queries into 1,200 records (235 pair judgments on Charades-FIG);
+      absorbed anchors enter the match set tagged <span class="mono">mined_by:"merge"</span> — and
+      still face the pixel gate like every other edge.</p></div>
+    <div class="card"><div class="t" style="color:var(--green)">why it matters</div>
+      <h4>Merge is discovery, not deduplication</h4>
+      <p>When two events in different videos independently generate the same query, that
+      coincidence <i>is</i> evidence the query is ambiguous — the match set gains a candidate edge
+      before any search happens. The scan below is the recall workhorse; merge catches the pairs
+      text search can miss because they are phrased identically.</p></div>
   </div>
 
-  <h3 class="block">Stage 5 · pixel gate (gate-<i>all</i>)</h3>
-  <p class="sub">A VLM re-verifies <b>every</b> surviving edge on real frames — anchors included.
-  Across the release: 2.6–4.9% of anchors rejected (their whole query dropped), 6.8–9.3% of
-  cross-video edges cut. An independent-family perceiver (InternVL3) later confirms 89.8% of what
-  shipped. Failed-open is impossible: any judge error drops the edge (fail-closed).</p>
+  <h3 class="block">Stage 4 · corpus scan — directional entailment over every caption</h3>
+  <div class="cards">
+    <div class="card"><div class="t" style="color:var(--green)">mechanism</div>
+      <h4>BM25 ∪ embedding shortlist → “does it SATISFY the query?”</h4>
+      <p>Each query retrieves a k=200 shortlist (BM25 and sentence-embedding search, merged by
+      rank) over <i>all</i> corpus captions; up to 40 unseen candidates get a directional entailment
+      judgment — “does the described segment <b>satisfy</b> the query” — explicitly not topical
+      similarity. Acceptance is the judge’s boolean; confidences are carried through as diagnostics,
+      not thresholds. Depth sensitivity: edge count plateaus at depth 50
+      (<span class="mono">2,892 edges at k=50/100/200</span>) — the shortlist is not the recall
+      bottleneck.</p></div>
+    <div class="card"><div class="t" style="color:var(--green)">example · what the judge actually read</div>
+      <p style="font-size:12.5px;line-height:1.6">query (coarse, from <span class="mono">XJA7Z_e0</span>): <i>“Someone drinks from a
+      bottle then lowers it and touches their mouth.”</i></p>
+      <p class="mono" style="font-size:11.5px;line-height:1.75">
+      rank2&nbsp;&nbsp;KQ6XW_e4&nbsp;[16.3–26.5] “…drinks from a clear plastic bottle, then lowers the bottle and places it on a small table…” → match<br>
+      rank8&nbsp;&nbsp;B0XI9_e1&nbsp;[13.7–23.4] “…drinks from a glass bottle, then lowers it and holds it in his hand…” → match<br>
+      rank9&nbsp;&nbsp;3MSZA_e0&nbsp;[0.0–26.4] “…stands in a doorway, holding a bottle and repeatedly bringing it to their mouth…” → match<br>
+      rank33&nbsp;2OHTZ_e1&nbsp;[10.2–14.3] “…drinking from a bottle, then lowers it and begins typing on a keyboard…” → match</p>
+      <p>A true match at shortlist rank 33 — this is why the scan judges deep into the list instead
+      of trusting retrieval order.</p></div>
+  </div>
 
-  <h3 class="block">Stage 6 · the released record (complete, verbatim)</h3>
-  <pre class="bib" style="font-size:11.5px">{
-  "amber_id": "charades_fig:pilot_00022",
-  "query_id": "pilot_00022",  "source": "charades_fig",
-  "query_text": "A person sits at a table and rotates a hairdryer.",
-  "granularity": "coarse",    "query_origin": "generated",
-  "anchor":   {"video": "735W9", "event_id": "735W9_e2", "span": [10.2, 20.4]},
+  <h3 class="block">Stage 5 · the pixel gate — gate-<i>all</i>, fail-closed</h3>
+  <div class="cards">
+    <div class="card"><div class="t" style="color:var(--red)">mechanism</div>
+      <h4>Every edge re-verified on its own frames — anchors included</h4>
+      <p>The VLM re-checks each surviving edge against 3–8 frames sampled from <i>that edge’s
+      span</i>. Full runs gate <b>everything</b>: anchors, merge edges, scan edges. A rejected
+      anchor drops its whole record — the caption that generated the query was unfaithful, so the
+      query itself is suspect. Two failure counters are kept apart:
+      <span class="mono">n_visual_rejected</span> (judge said no) and
+      <span class="mono">n_verify_failed</span> (anything threw — dropped fail-closed, never
+      shipped unverified).</p></div>
+    <div class="card"><div class="t" style="color:var(--red)">what it removed (Charades-FIG, real)</div>
+      <h4>9.3% of edges cut · 31 whole records dropped</h4>
+      <p>The five drinking-moments above all passed (<span class="mono">visual_verified:true</span>).
+      Across the source, the gate cut 9.3% of caption-space edges and rejected 31 anchors outright;
+      <span class="mono">verify_failed=0</span> — nothing shipped on a crashed check. Post-release, a
+      cross-family perceiver (InternVL3, non-Qwen) confirms 89.8% of a 300-edge stratified sample.
+      Honest caveat, disclosed: judge confidences cluster at 0.95 and are not calibrated — the
+      gate’s authority is the boolean re-check plus the independent audits, not the number.</p></div>
+  </div>
+
+  <h3 class="block">Stage 6 · assemble &amp; release — the record, verbatim</h3>
+  <div class="cards">
+    <div class="card"><div class="t" style="color:var(--amber)">the released record (C-track, ambiguity_size 5)</div>
+      <pre class="bib" style="font-size:11px;margin-top:8px">{
+  "query_id": "pilot_00000", "source": "charades_fig",
+  "query_text": "Someone drinks from a bottle then lowers
+                 it and touches their mouth.",
+  "granularity": "coarse",
+  "anchor": {"video":"XJA7Z","span":[0.0,22.1]},
   "match_set": [
-    {"video": "735W9", "event_id": "735W9_e2", "span": [10.2, 20.4],
-     "mined_by": "anchor", "visual_verified": true, "visual_conf": 0.95}
-  ],
-  "ambiguity_size": 1,        "tracks": ["U", "C"],
-  "split": "test",
-  "n_visual_rejected": 0, "n_verify_failed": 0, "anchor_rejected": false
+    {"video":"XJA7Z","span":[0.0,22.1],"mined_by":"anchor"},
+    {"video":"KQ6XW","span":[16.3,26.5],"mined_by":"scan:rank2"},
+    {"video":"B0XI9","span":[13.7,23.4],"mined_by":"scan:rank8"},
+    {"video":"3MSZA","span":[0.0,26.4],"mined_by":"scan:rank9"},
+    {"video":"2OHTZ","span":[10.2,14.3],"mined_by":"scan:rank33"}
+  ],   <span style="color:#8a8474">// all visual_verified:true — fields abridged</span>
+  "ambiguity_size": 5, "tracks": ["C"],
+  "n_visual_rejected": 0, "n_verify_failed": 0
 }</pre>
-  <p class="sub" style="margin-top:10px">This record is <b>U-track</b> (unique — its verified match
-  set is one moment, so single-gold metrics are honest on it). The fine sibling query
-  (<span class="mono">pilot_00961</span>) carries the multi-moment match set shown above and lands
-  in the C-track; the two together are a real ambiguity edge — the same edge the memory demo below
-  exploits. Train records additionally carry <span class="mono">supervision_safe</span>
-  (match-set-disjointness from eval, enforced by a released unit test).</p>
+      <div style="display:flex;gap:6px;margin-top:8px;flex-wrap:wrap">
+        <figure style="margin:0;text-align:center"><img src="assets/cons_XJA7Z.jpg" alt="XJA7Z" style="height:56px;border-radius:5px;border:1px solid var(--line)"><figcaption class="mono" style="font-size:9.5px">XJA7Z</figcaption></figure>
+        <figure style="margin:0;text-align:center"><img src="assets/cons_KQ6XW.jpg" alt="KQ6XW" style="height:56px;border-radius:5px;border:1px solid var(--line)"><figcaption class="mono" style="font-size:9.5px">KQ6XW</figcaption></figure>
+        <figure style="margin:0;text-align:center"><img src="assets/cons_B0XI9.jpg" alt="B0XI9" style="height:56px;border-radius:5px;border:1px solid var(--line)"><figcaption class="mono" style="font-size:9.5px">B0XI9</figcaption></figure>
+        <figure style="margin:0;text-align:center"><img src="assets/cons_3MSZA.jpg" alt="3MSZA" style="height:56px;border-radius:5px;border:1px solid var(--line)"><figcaption class="mono" style="font-size:9.5px">3MSZA</figcaption></figure>
+        <figure style="margin:0;text-align:center"><img src="assets/cons_2OHTZ.jpg" alt="2OHTZ" style="height:56px;border-radius:5px;border:1px solid var(--line)"><figcaption class="mono" style="font-size:9.5px">2OHTZ</figcaption></figure>
+      </div>
+      <p style="margin-top:8px">Five different videos, five verified moments, one query — a
+      single-gold benchmark would call four of these five correct answers <i>wrong</i>.</p></div>
+    <div class="card"><div class="t" style="color:var(--amber)">assembly rules</div>
+      <h4>Tracks, splits, safety flags</h4>
+      <p><span class="mono">ambiguity_size</span> = distinct verified events. Records with one
+      verified moment carry tracks <span class="mono">["U","C"]</span> (single-gold metrics are
+      honest on them); multi-moment records are <span class="mono">["C"]</span>-only. Splits are
+      <b>video-disjoint on the anchor’s video</b> (60/15/25); train records additionally carry
+      <span class="mono">supervision_safe</span> — true iff none of the record’s match-set videos
+      appear in any val/test match set (enforced by a released unit test; this flag is what caught
+      our own SFT leakage). v1 then stratifies 375 records per source across granularity ×
+      unique/ambiguous. The U-track sibling of this walkthrough —
+      <span class="mono">pilot_00022</span>, “A person sits at a table and rotates a hairdryer.”,
+      match set = exactly <span class="mono">735W9 [10.2,20.4]</span> — ships with
+      <span class="mono">ambiguity_size:1, tracks:["U","C"]</span>.</p>
+      <p style="margin-top:8px">Known limit, disclosed rather than hidden: match sets are mined in
+      caption space, so they are caption-reachable by construction — our BM25 probe quantifies this
+      and the natural-query control shows the ambiguity is a property of the videos, not of our
+      generated phrasing.</p></div>
+  </div>
 </div></section>
-\n<!-- ================= METHOD ================= -->
+
+<!-- ================= METHOD ================= -->
 <section id="method" style="background:var(--bg2)"><div class="wrap">
   <span class="sec-tag c2">The method</span>
   <h2>An agentic loop that pays for pixels only where they matter.</h2>
@@ -623,7 +700,7 @@ pre.bib{background:var(--bg2);border:1px solid var(--line);border-radius:10px;pa
   frontier) runs as exact CPU simulation over one cached GPU pass of verifier scores;
   <b>results land here when the score-dump job clears the cluster queue</b>.</p>
 </div></section>
-\n<!-- ================= RESULTS ================= -->
+<!-- ================= RESULTS ================= -->
 <section id="results"><div class="wrap">
   <span class="sec-tag c3">Results</span>
   <h2>Looking beats ranking. The skill is already in small models.</h2>
