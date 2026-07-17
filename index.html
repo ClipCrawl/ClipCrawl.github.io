@@ -209,7 +209,7 @@ pre.bib{background:var(--bg2);border:1px solid var(--line);border-radius:10px;pa
   <div class="brand"><span class="dot"></span>AMBER</div>
   <div class="navlinks">
     <a href="#problem">Problem</a><a href="#dataset">Dataset</a>
-    <a href="#measure">Measurement</a><a href="#method">Method</a>
+    <a href="#measure">Measurement</a><a href="#construction">Construction</a><a href="#method">Method</a><a href="#memory">Memory</a>
     <a href="#results">Results</a>
     <a href="https://github.com/ClipCrawl" target="_blank" rel="noopener">GitHub ↗</a>
   </div>
@@ -412,7 +412,90 @@ pre.bib{background:var(--bg2);border:1px solid var(--line);border-radius:10px;pa
   +9.1, CI [1.1, 18.2]). A corpus-moment-level analogue of pooling bias in IR evaluation.</p>
 </div></section>
 
-<!-- ================= METHOD ================= -->
+
+<!-- ================= CONSTRUCTION WALKTHROUGH ================= -->
+<section id="construction"><div class="wrap">
+  <span class="sec-tag">Construction, step by step</span>
+  <h2>One query, end to end — with the real data.</h2>
+  <p class="sub">Every artifact below is copied verbatim from the released files. We follow the
+  moment <span class="mono">735W9 @ 10.2–20.4s</span> from raw video to released record.</p>
+
+  <h3 class="block">Stage 0–1 · segment &amp; caption</h3>
+  <div class="cards">
+    <div class="card"><div class="t" style="color:var(--amber)">input · event segment</div>
+      <h4>735W9, event e2 (10.2–20.4s)</h4>
+      <div style="display:flex;gap:10px;margin:10px 0"><img src="assets/agent_dryer.jpg" alt="frame from 735W9 event e2"
+        style="height:86px;border-radius:8px;border:1px solid var(--line)"></div>
+      <p>Videos are cut at CLIP-feature change-points (calibrated to ~8–12s median). 3–8 frames
+      per event are sampled head/mid/tail.</p></div>
+    <div class="card"><div class="t" style="color:var(--amber)">output · caption (Qwen3-VL-8B, verbatim)</div>
+      <h4 style="font-family:var(--serif);font-style:italic;font-weight:500;font-size:16.5px">
+      “A person in a pink hoodie and glasses is seated at a wooden table, holding and manipulating
+      a black and blue hairdryer, rotating it in their hands.”</h4>
+      <p>Captions are the sole semantic medium downstream — which is why they are audited
+      (independent-family judge, 2 rounds, gate ≥ 0.90) and withheld from the evaluation release.</p></div>
+  </div>
+
+  <h3 class="block">Stage 2 · query generation (actual generator output)</h3>
+  <div class="tbl-wrap"><table>
+    <thead><tr><th>granularity</th><th>generated query (verbatim)</th><th>3-gram overlap w/ caption</th></tr></thead>
+    <tbody>
+      <tr><td>fine</td><td style="font-weight:400">“Someone wearing a pink hooded top and eyeglasses sits at a wooden
+        surface, turning a black and blue hairdryer in their hands.”</td><td class="tnum">0.25</td></tr>
+      <tr><td>coarse</td><td style="font-weight:400">“A person sits at a table and rotates a hairdryer.”</td><td class="tnum">0.00</td></tr>
+    </tbody>
+  </table></div>
+  <p class="sub" style="margin-top:12px">The generator is forbidden from reusing 3 consecutive caption
+  words (measured overlap shown) — downstream matching must be semantic, not lexical. Hardened-prompt
+  ablation cut mean overlap from 0.143 to 0.088.</p>
+
+  <h3 class="block">Stage 3–4 · merge + corpus scan (a real scan hit)</h3>
+  <div class="cards">
+    <div class="card"><div class="t" style="color:var(--cyan)">merge — ambiguity by construction</div>
+      <h4>Same query from different videos ⇒ edge</h4>
+      <p>When two events independently generate equivalent queries, they merge into one record and
+      become each other's matches — no labeling step. In practice merge fires rarely
+      (~44 pair-judgments/source); the scan below is the recall workhorse.</p></div>
+    <div class="card"><div class="t" style="color:var(--green)">scan — entailment over every caption</div>
+      <h4>Real scanned edges of the fine query</h4>
+      <p class="mono" style="font-size:12px;line-height:1.8">
+      anchor&nbsp;&nbsp;&nbsp;&nbsp;735W9 [6.1–10.2] · vis_conf .95<br>
+      scan:rank3&nbsp;735W9 [10.2–20.4] · llm_conf .95 · vis_conf .95<br>
+      scan:rank9&nbsp;735W9 [0.0–6.1] · llm_conf .95 · vis_conf .95</p>
+      <p>BM25 shortlist (k=200) → directional entailment (“does this described event satisfy the
+      query?”), ≤40 judgments per query. Here the scan discovered the adjacent moments of the same
+      activity — including the hairdryer moment that another query owns as anchor.</p></div>
+  </div>
+
+  <h3 class="block">Stage 5 · pixel gate (gate-<i>all</i>)</h3>
+  <p class="sub">A VLM re-verifies <b>every</b> surviving edge on real frames — anchors included.
+  Across the release: 2.6–4.9% of anchors rejected (their whole query dropped), 6.8–9.3% of
+  cross-video edges cut. An independent-family perceiver (InternVL3) later confirms 89.8% of what
+  shipped. Failed-open is impossible: any judge error drops the edge (fail-closed).</p>
+
+  <h3 class="block">Stage 6 · the released record (complete, verbatim)</h3>
+  <pre class="bib" style="font-size:11.5px">{
+  "amber_id": "charades_fig:pilot_00022",
+  "query_id": "pilot_00022",  "source": "charades_fig",
+  "query_text": "A person sits at a table and rotates a hairdryer.",
+  "granularity": "coarse",    "query_origin": "generated",
+  "anchor":   {"video": "735W9", "event_id": "735W9_e2", "span": [10.2, 20.4]},
+  "match_set": [
+    {"video": "735W9", "event_id": "735W9_e2", "span": [10.2, 20.4],
+     "mined_by": "anchor", "visual_verified": true, "visual_conf": 0.95}
+  ],
+  "ambiguity_size": 1,        "tracks": ["U", "C"],
+  "split": "test",
+  "n_visual_rejected": 0, "n_verify_failed": 0, "anchor_rejected": false
+}</pre>
+  <p class="sub" style="margin-top:10px">This record is <b>U-track</b> (unique — its verified match
+  set is one moment, so single-gold metrics are honest on it). The fine sibling query
+  (<span class="mono">pilot_00961</span>) carries the multi-moment match set shown above and lands
+  in the C-track; the two together are a real ambiguity edge — the same edge the memory demo below
+  exploits. Train records additionally carry <span class="mono">supervision_safe</span>
+  (match-set-disjointness from eval, enforced by a released unit test).</p>
+</div></section>
+\n<!-- ================= METHOD ================= -->
 <section id="method" style="background:var(--bg2)"><div class="wrap">
   <span class="sec-tag c2">The method</span>
   <h2>An agentic loop that pays for pixels only where they matter.</h2>
@@ -480,7 +563,67 @@ pre.bib{background:var(--bg2);border:1px solid var(--line);border-radius:10px;pa
   released artifacts.</p>
 </div></section>
 
-<!-- ================= RESULTS ================= -->
+
+<!-- ================= MEMORY ================= -->
+<section id="memory" style="background:var(--bg2)"><div class="wrap">
+  <span class="sec-tag c2">Memory design</span>
+  <h2>RepoMem — verification memory over the ambiguity graph.</h2>
+  <p class="sub">Single-video memory agents (WorldMM-style) cache <i>perception</i> — captions,
+  triples, snapshots — inside one long video. RepoMem is the corpus-level counterpart: it caches
+  <b>verified decisions</b> across queries, with trust dynamics, and its reuse decisions are the
+  first that a benchmark can actually score.</p>
+
+  <div class="tbl-wrap"><table>
+    <thead><tr><th>axis</th><th>single-video memory (e.g. WorldMM)</th><th>RepoMem (ours)</th></tr></thead>
+    <tbody>
+      <tr><td>scope</td><td>one long video</td><td>a video repository, across queries</td></tr>
+      <tr><td>unit stored</td><td>descriptions (captions / triples / snapshots)</td><td><b>verdicts</b>: (moment, query) ↦ match/reject, conf, provenance</td></tr>
+      <tr><td>construction</td><td>offline, once per video</td><td>online — grows from the answered query stream</td></tr>
+      <tr><td>trust</td><td>written = trusted</td><td>provenance-gated reuse · depth-1 chains · contradiction ⇒ reopen</td></tr>
+      <tr><td>evaluability</td><td>end-task QA only</td><td class="hl" style="background:none"><b>reuse decisions scored against ground-truth match sets</b></td></tr>
+    </tbody>
+  </table></div>
+
+  <h3 class="block">The memory entry (query-conditional — the load-bearing choice)</h3>
+  <div class="cards">
+    <div class="card"><div class="t" style="color:var(--amber)">entry schema</div>
+      <pre class="bib" style="font-size:11.5px;margin:0">{
+  "moment":  ("charades_fig", "735W9", 10.2),
+  "query_text": "A person sits at a table and
+                 rotates a hairdryer.",
+  "query_emb":  &lt;MiniLM vector&gt;,
+  "verdict":  "match" | "reject",   // rejects cached too
+  "conf":     0.85,
+  "provenance": "pixel" | "reused",
+  "contradicted": false
+}</pre></div>
+    <div class="card"><div class="t" style="color:var(--amber)">the three rules</div>
+      <p><b>R1 · depth-1 reuse.</b> Only pixel-verified entries are reusable; entries born from
+      reuse never are — error avalanches are impossible by construction.<br><br>
+      <b>R2 · negative cache.</b> A look-alike rejected for one query class is not re-inspected
+      for a near-duplicate query.<br><br>
+      <b>R3 · contradiction ⇒ reopen.</b> A fresh pixel verdict contradicting a stored same-class
+      entry poisons both — the next encounter re-verifies on pixels.</p></div>
+  </div>
+
+  <h3 class="block">The reuse gate</h3>
+  <p class="sub" style="margin-bottom:16px">Reuse a stored verdict for a new query <span class="mono">q′</span>
+  on moment <span class="mono">m</span> only if: same moment · query similarity ≥ τ<sub>q</sub> ·
+  pixel provenance, uncontradicted · confidence ≥ τ<sub>conf</sub>. The <b>gateless</b> ablation
+  (moment identity alone) is the harm arm; an <b>oracle</b> arm (reuse exactly along ground-truth
+  edges) bounds what the protocol can offer. Verdicts are query-conditional — the same moment can
+  be a match for “rotates a hairdryer” and a non-match for “opens a fridge” — which is why a bare
+  moment→verdict cache would be wrong.</p>
+
+  <h3 class="block">Why the ambiguity graph makes memory measurable</h3>
+  <p class="sub">On the test stream there are <b>1,600 reuse opportunities</b> (763 moments shared
+  across queries' candidate lists). Each reuse event is scoreable offline: a reused <i>match</i> on
+  moment m for query q′ is correct iff m ∈ M<sub>q′</sub> — ground truth no other benchmark
+  publishes. Pre-registered evaluation (OFF / ON / GATELESS / ORACLE × 5 stream orders, τ-sweep
+  frontier) runs as exact CPU simulation over one cached GPU pass of verifier scores;
+  <b>results land here when the score-dump job clears the cluster queue</b>.</p>
+</div></section>
+\n<!-- ================= RESULTS ================= -->
 <section id="results"><div class="wrap">
   <span class="sec-tag c3">Results</span>
   <h2>Looking beats ranking. The skill is already in small models.</h2>
@@ -494,8 +637,8 @@ pre.bib{background:var(--bg2);border:1px solid var(--line);border-radius:10px;pa
       <tr><td>CLIP-VR (never looks)</td><td class="tnum">31.3</td><td class="tnum">36.3</td><td class="tnum">29.5</td><td class="tnum">—</td></tr>
       <tr class="hl"><td>Zero-shot 3B verifier (Qwen2.5-VL)</td><td class="tnum">37.8</td><td class="tnum">45.9</td><td class="tnum">39.8</td><td class="tnum">p=1.5e-3 **</td></tr>
       <tr><td>+ SFT distillation (decontaminated)</td><td class="tnum">37.1</td><td class="tnum">45.2</td><td class="tnum">37.5</td><td class="tnum">p=0.83 n.s.</td></tr>
-      <tr><td>+ GRPO, anchor-only reward</td><td class="tnum">39.4</td><td class="tnum">47.9</td><td class="tnum">40.9</td><td class="tnum">p=0.15 n.s.</td></tr>
-      <tr><td>+ GRPO, C-track reward</td><td class="tnum">39.0</td><td class="tnum">46.7</td><td class="tnum">39.8</td><td class="tnum">p=0.37 n.s.</td></tr>
+      <tr><td>+ GRPO v2, anchor-only reward</td><td class="tnum">37.1</td><td class="tnum">45.2</td><td class="tnum">42.0</td><td class="tnum">n.s.</td></tr>
+      <tr><td>+ GRPO v2, C-track reward</td><td class="tnum">39.0</td><td class="tnum">47.5</td><td class="tnum">39.8</td><td class="tnum">n.s.</td></tr>
       <tr class="hl"><td>Frontier agent (teacher)</td><td class="tnum">41.3</td><td class="tnum">49.0</td><td class="tnum">38.6</td><td class="tnum">p=0.38 n.s. (tied)</td></tr>
     </tbody>
   </table></div>
@@ -515,10 +658,13 @@ pre.bib{background:var(--bg2);border:1px solid var(--line);border-radius:10px;pa
     decontaminated numbers and a per-record <span class="mono">supervision_safe</span> flag.
   </div>
   <div class="note red">
-    <b class="h">Multi-positive RL reward vs anchor-only: no significant difference</b> at our
-    training scale (357 clean queries, shortlist-depth-5 regime where the two rewards coincide on
-    89% of queries). A redesigned run targeting the regime where anchor-reward starves is in
-    progress.
+    <b class="h">Multi-positive RL reward vs anchor-only: null — twice.</b> A first run was
+    invalidated by design review (zero-gradient groups, rewards differing on only 11% of queries).
+    The corrected rerun — adversarially reviewed, gold events injected into training candidates,
+    a recall-complete eval where the contrast is expressible — still finds no difference
+    (multi-video paired sign test +7/−5, p=0.77), and no suppression signature: anchor-reward
+    training picks non-anchor true matches as often as C-track training (37.5% vs 39.0%).
+    At 3B/LoRA scale with 357 clean queries, reward semantics do not measurably matter.
   </div>
   <div class="note red">
     <b class="h">Granularity dependence: not supported.</b> Agent gains on fine vs coarse queries
