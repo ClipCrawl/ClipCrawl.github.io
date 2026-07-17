@@ -531,45 +531,63 @@ pre.bib{background:var(--bg2);border:1px solid var(--line);border-radius:10px;pa
   <div class="cards">
     <div class="card"><div class="t" style="color:var(--cyan)">mechanism</div>
       <h4>Same query from different videos ⇒ one record</h4>
-      <p>Sentence-embedding neighbors (cos ≥ 0.88, same granularity, top-10 peers per query) go to
-      an LLM equivalence judge — “same kind of moment, same constraints?” A failed judgment counts
-      as <i>not-same</i>: the pipeline under-merges rather than hallucinating equivalence. Union-find
-      components collapse 4,754 raw queries into 1,200 records (235 pair judgments on Charades-FIG);
-      absorbed anchors enter the match set tagged <span class="mono">mined_by:"merge"</span> — and
-      still face the pixel gate like every other edge.</p></div>
-    <div class="card"><div class="t" style="color:var(--cyan)">example · a real merge (pilot_00301)</div>
-      <p style="font-size:13px;line-height:1.7"><span class="mono">QOYH2_e1</span> [10.1–26.3] independently generated:<br>
-      <i>“A person takes a drink from a cup and puts it down.”</i><br>
-      <span class="mono">21F9H_e2</span> [13.9–19.9] independently generated:<br>
-      <i>“Someone drinks from a cup and then puts it down.”</i></p>
-      <p>Embedding cosine cleared 0.88, the equivalence judge said <i>same moment kind</i>, and the
-      two collapsed into one record — <span class="mono">21F9H_e2</span> entering the match set as
-      <span class="mono">mined_by:"merge"</span>. Merge is discovery, not deduplication: two videos
-      independently spawning the same query <i>is</i> evidence the query is ambiguous, found before
-      any search runs.</p></div>
+      <p>Every query is embedded (MiniLM); peers with cosine ≥ 0.88 and the <b>same granularity</b>
+      (top-10 per query) go to an LLM equivalence judge. The prompt, verbatim:</p>
+      <pre class="bib" style="font-size:10.5px;margin:8px 0">Query A: "{a}"
+Query B: "{b}"
+Would a video moment satisfying A also satisfy B,
+and vice versa (same kind of moment, same
+constraints)? Return JSON {"same": true/false}.</pre>
+      <p>A failed judgment counts as <i>not-same</i> — the pipeline under-merges rather than
+      hallucinating equivalence. Union-find over the yes-pairs collapses 4,754 raw queries into
+      1,200 records (235 pair judgments on Charades-FIG). Merge is discovery, not deduplication:
+      two videos independently spawning the same query <i>is</i> evidence the query is ambiguous,
+      found before any search runs.</p></div>
+    <div class="card"><div class="t" style="color:var(--cyan)">worked example · the real merge behind pilot_00301</div>
+      <div style="display:flex;gap:8px;margin:8px 0">
+        <figure style="margin:0;text-align:center"><img src="assets/cons_QOYH2.jpg" alt="QOYH2 e1" style="height:70px;border-radius:6px;border:1px solid var(--line)"><figcaption class="mono" style="font-size:10px;margin-top:3px">QOYH2_e1 [10.1–26.3]</figcaption></figure>
+        <figure style="margin:0;text-align:center"><img src="assets/cons_21F9H.jpg" alt="21F9H e2" style="height:70px;border-radius:6px;border:1px solid var(--line)"><figcaption class="mono" style="font-size:10px;margin-top:3px">21F9H_e2 [13.9–19.9]</figcaption></figure>
+      </div>
+      <p style="font-size:12.5px;line-height:1.7">
+      <span class="mono">QOYH2_e1</span> generated: <i>“A person takes a drink from a cup and puts it down.”</i><br>
+      <span class="mono">21F9H_e2</span> generated: <i>“Someone drinks from a cup and then puts it down.”</i></p>
+      <p class="mono" style="font-size:11.5px;line-height:1.8;background:var(--amber-s);border-radius:6px;padding:8px 10px">
+      ① embedding cosine ≥ 0.88 → candidate pair<br>
+      ② equivalence judge → <b>{"same": true}</b> <span style="color:#8a8474">(cached verdict, verbatim)</span><br>
+      ③ union-find → one record; 21F9H_e2 enters as mined_by:"merge"<br>
+      ④ …and still faces the pixel gate in Stage 5 like every edge</p></div>
   </div>
 
   <h3 class="block" id="c-s4">Stage 4 · corpus scan — directional entailment over every caption</h3>
   <div class="cards">
     <div class="card"><div class="t" style="color:var(--green)">mechanism</div>
       <h4>BM25 ∪ embedding shortlist → “does it SATISFY the query?”</h4>
-      <p>Each query retrieves a k=200 shortlist (BM25 and sentence-embedding search, merged by
-      rank) over <i>all</i> corpus captions; up to 40 unseen candidates get a directional entailment
-      judgment — “does the described segment <b>satisfy</b> the query” — explicitly not topical
-      similarity. Acceptance is the judge’s boolean; confidences are carried through as diagnostics,
-      not thresholds. Depth sensitivity: edge count plateaus at depth 50
-      (<span class="mono">2,892 edges at k=50/100/200</span>) — the shortlist is not the recall
-      bottleneck.</p></div>
-    <div class="card"><div class="t" style="color:var(--green)">example · what the judge actually read</div>
-      <p style="font-size:12.5px;line-height:1.6">query (coarse, from <span class="mono">XJA7Z_e0</span>): <i>“Someone drinks from a
-      bottle then lowers it and touches their mouth.”</i></p>
-      <p class="mono" style="font-size:11.5px;line-height:1.75">
-      rank2&nbsp;&nbsp;KQ6XW_e4&nbsp;[16.3–26.5] “…drinks from a clear plastic bottle, then lowers the bottle and places it on a small table…” → match<br>
-      rank8&nbsp;&nbsp;B0XI9_e1&nbsp;[13.7–23.4] “…drinks from a glass bottle, then lowers it and holds it in his hand…” → match<br>
-      rank9&nbsp;&nbsp;3MSZA_e0&nbsp;[0.0–26.4] “…stands in a doorway, holding a bottle and repeatedly bringing it to their mouth…” → match<br>
-      rank33&nbsp;2OHTZ_e1&nbsp;[10.2–14.3] “…drinking from a bottle, then lowers it and begins typing on a keyboard…” → match</p>
-      <p>A true match at shortlist rank 33 — this is why the scan judges deep into the list instead
-      of trusting retrieval order.</p></div>
+      <p>Each query retrieves a k=200 shortlist (BM25 and sentence-embedding search over <i>all</i>
+      corpus captions, merged by rank); up to 40 unseen candidates are judged. The prompt, verbatim:</p>
+      <pre class="bib" style="font-size:10.5px;margin:8px 0">A video segment is described as: "{caption}"
+Search query: "{query}"
+Does the described segment SATISFY the query
+(all the query's constraints are present in the
+description)? Judge entailment, not topical
+similarity. Return JSON
+{"match": true/false, "conf": 0.0-1.0}.</pre>
+      <p>Acceptance is the boolean; conf is carried as a diagnostic. Depth sensitivity: the edge
+      count plateaus at depth 50 (<span class="mono">2,892 edges at k=50/100/200</span>) — the
+      shortlist is not the recall bottleneck.</p></div>
+    <div class="card"><div class="t" style="color:var(--green)">what “entailment, not similarity” means in practice</div>
+      <p style="font-size:12.5px">For <i>“Someone drinks from a bottle then lowers it and touches their
+      mouth.”</i> the judge read 40 shortlisted captions: <b>4 matched, 36 rejected</b>. The rejects
+      are the point — all are <i>topically</i> about drinking:</p>
+      <p class="mono" style="font-size:11px;line-height:1.75">
+      ✗ 2TAT3_e1 “raises a <b>glass</b> to his mouth and drinks” → conf .10 (glass ≠ bottle)<br>
+      ✗ BZ5N5_e2 “<b>pours</b> water from a plastic bottle into… glasses” → conf .00 (nobody drinks)<br>
+      ✗ QRSRE_e1 “drinks from a purple bottle… then lowers the bottle” → conf .70 (no touch of the mouth — the near-miss)<br>
+      ✗ QOYH2_e1 “picks up a red <b>cup</b>… drinks… lowers” → conf .10 (cup ≠ bottle)<br>
+      ✓ KQ6XW_e4 · ✓ B0XI9_e1 · ✓ 3MSZA_e0 · ✓ 2OHTZ_e1 → the four verified edges of pilot_00000</p>
+      <p>Note <span class="mono">QOYH2_e1</span>: <b>rejected</b> here for the bottle query — while
+      anchoring the cup record in Stage 3. The same moment matches one query and not another;
+      matching is query-conditional, which is exactly why RepoMem stores verdicts per
+      (moment,&nbsp;query), never per moment.</p></div>
   </div>
 
   <h3 class="block" id="c-s5">Stage 5 · the pixel gate — gate-<i>all</i>, fail-closed</h3>
@@ -582,20 +600,28 @@ pre.bib{background:var(--bg2);border:1px solid var(--line);border-radius:10px;pa
       query itself is suspect. Two failure counters are kept apart:
       <span class="mono">n_visual_rejected</span> (judge said no) and
       <span class="mono">n_verify_failed</span> (anything threw — dropped fail-closed, never
-      shipped unverified).</p></div>
-    <div class="card"><div class="t" style="color:var(--red)">example · one gate call, then the totals</div>
-      <h4>9.3% of edges cut · 31 whole records dropped</h4>
-      <div style="display:flex;gap:10px;align-items:center;margin:8px 0">
-        <img src="assets/cons_2OHTZ.jpg" alt="2OHTZ gate frames" style="height:62px;border-radius:6px;border:1px solid var(--line)">
-        <p class="mono" style="font-size:11px;line-height:1.6;margin:0">edge&nbsp;2OHTZ&nbsp;[10.2–14.3] × “Someone drinks from a
-        bottle then lowers it…”<br>→ 3 frames from the span → judge: match:true<br>→ ships as visual_verified:true</p>
+      shipped unverified). Charades-FIG totals: <b>9.3% of edges cut, 31 records dropped,
+      verify_failed = 0</b>; a cross-family perceiver (InternVL3) later confirms 89.8% of a
+      300-edge sample. Disclosed caveat: judge confidences cluster at 0.95 and are uncalibrated —
+      the gate’s authority is the frame-level re-check plus the independent audits, not the
+      number.</p></div>
+    <div class="card"><div class="t" style="color:var(--red)">worked example · an edge the scan believed and the gate killed</div>
+      <div style="display:flex;gap:10px;align-items:flex-start;margin:8px 0">
+        <img src="assets/cons_S444Y.jpg" alt="S444Y frames" style="height:70px;border-radius:6px;border:1px solid var(--line)">
+        <p style="font-size:12.5px;line-height:1.6;margin:0">query (<span class="mono">pilot_00013</span>):
+        <i>“Someone moves to a <b>window</b>, bends, and picks something up from the floor.”</i></p>
       </div>
-      <p>The five drinking-moments above all passed this check.
-      Across the source, the gate cut 9.3% of caption-space edges and rejected 31 anchors outright;
-      <span class="mono">verify_failed=0</span> — nothing shipped on a crashed check. Post-release, a
-      cross-family perceiver (InternVL3, non-Qwen) confirms 89.8% of a 300-edge stratified sample.
-      Honest caveat, disclosed: judge confidences cluster at 0.95 and are not calibrated — the
-      gate’s authority is the boolean re-check plus the independent audits, not the number.</p></div>
+      <p style="font-size:12.5px;line-height:1.65"><span class="mono">S444Y_e1</span>’s caption — “stands in a dimly lit room,
+      picks up a green and red woven bag from the floor” — never mentions a window, but the scan
+      judge waved it through at conf .95. The gate looked at the frames: no window →
+      <b>rejected</b>; the shipped record keeps only its verified single match
+      (<span class="mono">n_visual_rejected: 1</span>). Text-space mining is recall-oriented and
+      imperfect <i>by design</i> — the pixel gate is the precision authority that makes that safe.</p>
+      <div style="display:flex;gap:10px;align-items:center;margin-top:10px;border-top:1px dashed var(--line);padding-top:10px">
+        <img src="assets/cons_2OHTZ.jpg" alt="2OHTZ gate frames" style="height:56px;border-radius:6px;border:1px solid var(--line)">
+        <p class="mono" style="font-size:10.5px;line-height:1.6;margin:0">…and an accepted call: 2OHTZ [10.2–14.3] × the bottle query
+        → 3 frames from the span → match:true → ships as visual_verified:true.</p>
+      </div></div>
   </div>
 
   <h3 class="block" id="c-s6">Stage 6 · assemble &amp; release — the record, verbatim</h3>
