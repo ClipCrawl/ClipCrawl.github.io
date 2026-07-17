@@ -278,6 +278,27 @@ pre.bib{background:var(--bg2);border:1px solid var(--line);border-radius:10px;pa
     <div class="stat"><div class="v">2.6–4.9%</div><div class="k">of anchors dropped by the pixel gate — unfaithful captions caught before release</div></div>
   </div>
 
+  <h3 class="block">Composition — the full accounting</h3>
+  <div class="tbl-wrap"><table>
+    <thead><tr><th>source</th><th>pool videos</th><th>w/ verified moments</th><th>queries</th>
+      <th>fine / coarse</th><th>train / val / test</th><th>U / C-only</th><th>multi-video</th></tr></thead>
+    <tbody>
+      <tr><td>Charades-FIG</td><td class="tnum">933</td><td class="tnum">574</td><td class="tnum">372</td>
+        <td class="tnum">186 / 186</td><td class="tnum">220 / 62 / 90</td><td class="tnum">186 / 186</td><td class="tnum">186 (50.0%)</td></tr>
+      <tr><td>DiDeMo</td><td class="tnum">832</td><td class="tnum">413</td><td class="tnum">372</td>
+        <td class="tnum">186 / 186</td><td class="tnum">227 / 54 / 91</td><td class="tnum">186 / 186</td><td class="tnum">186 (50.0%)</td></tr>
+      <tr><td>QVHighlights</td><td class="tnum">199</td><td class="tnum">183</td><td class="tnum">362</td>
+        <td class="tnum">176 / 186</td><td class="tnum">217 / 55 / 90</td><td class="tnum">186 / 176</td><td class="tnum">176 (48.6%)</td></tr>
+      <tr style="font-weight:650;border-top:2px solid var(--line2)"><td>AMBER v1</td><td class="tnum">1,964</td><td class="tnum">1,170</td><td class="tnum">1,106</td>
+        <td class="tnum">548 / 558</td><td class="tnum">664 / 171 / 271</td><td class="tnum">558 / 548</td><td class="tnum">548 (49.5%)</td></tr>
+    </tbody>
+  </table></div>
+  <p class="sub" style="margin-top:12px">Splits are video-disjoint on the anchor's video. Match sets:
+  mean 2.75 moments, max 35. Of the 664 train queries, <b>357 are
+  <span class="mono">supervision_safe</span></b> — their match sets share no video with any val/test
+  match set; the rest are flagged, not hidden (they are what exposed our own SFT leakage).
+  Manifest sha <span class="mono">ccda672b</span>, metrics covered by released unit tests.</p>
+
   <h3 class="block">Construction — caption-driven, pixel-gated</h3>
   <p class="sub">Candidate matches are mined in caption space (text is cheap to search); nothing
   ships unless a VLM re-confirms it on frames from the actual span — anchors included, fail-closed.
@@ -652,6 +673,23 @@ pre.bib{background:var(--bg2);border:1px solid var(--line);border-radius:10px;pa
       A <b>reuse gate</b> blocks unverified or low-confidence reuse (false-reuse harm control).</p></div>
   </div>
 
+  <h3 class="block">What each tool actually runs</h3>
+  <div class="tbl-wrap"><table>
+    <thead><tr><th>tool</th><th>backing computation</th><th>cost class</th></tr></thead>
+    <tbody>
+      <tr><td class="mono">/clip</td><td>cosine over cached CLIP ViT-L/14 frame features (0.5 fps, mean-pooled per event) — the source pool is pre-indexed</td><td class="tnum">1</td></tr>
+      <tr><td class="mono">/caption</td><td>Qwen3-VL-8B describes 3 sampled frames of one event</td><td class="tnum">2</td></tr>
+      <tr><td class="mono">/verify</td><td>Qwen2.5-VL-3B yes/no logit contrast: p(match) = softmax(z<sub>yes</sub>, z<sub>no</sub>) over 3-frame chunks of the event, max-pooled — the single most informative and most expensive call</td><td class="tnum">4</td></tr>
+      <tr><td class="mono">/ground</td><td>snap the answer span to the event boundaries from construction-independent segmentation</td><td class="tnum">2</td></tr>
+      <tr><td class="mono">/memory</td><td>RepoMem recall/write (next section) — query-conditional verdicts, gated reuse</td><td class="tnum">0</td></tr>
+      <tr><td class="mono">/abstain</td><td>stop when best p(match) stays under a calibrated floor — answer “not in this repo”</td><td class="tnum">0</td></tr>
+    </tbody>
+  </table></div>
+  <p class="sub" style="margin-top:10px;margin-bottom:26px">Measured on the held-out test stream: the
+  frontier agent opens <b>3.34 of 5</b> shortlist candidates per query on average; a full
+  verify-everything pass costs 3,267 calls — the memory section shows how many of those are
+  provably redundant.</p>
+
   <h3 class="block">A worked episode — two real test queries, one shared verified moment</h3>
   <p class="sub" style="margin-bottom:18px">These two queries' verified match sets share the moment
   <span class="mono">735W9 @ 10.2–20.4s</span> — a real ambiguity edge in AMBER. Perception is
@@ -749,9 +787,32 @@ pre.bib{background:var(--bg2);border:1px solid var(--line);border-radius:10px;pa
   <p class="sub">On the test stream there are <b>1,600 reuse opportunities</b> (763 moments shared
   across queries' candidate lists). Each reuse event is scoreable offline: a reused <i>match</i> on
   moment m for query q′ is correct iff m ∈ M<sub>q′</sub> — ground truth no other benchmark
-  publishes. Pre-registered evaluation (OFF / ON / GATELESS / ORACLE × 5 stream orders, τ-sweep
-  frontier) runs as exact CPU simulation over one cached GPU pass of verifier scores;
-  <b>results land here when the score-dump job clears the cluster queue</b>.</p>
+  publishes. Evaluation is pre-registered and exact: one cached GPU pass of verifier scores, then
+  CPU simulation of the query stream (5 seeded orders); the OFF arm reproduces the live evaluation
+  271/271 before any memory arm is read.</p>
+
+  <h3 class="block">Measured — the five arms (test stream, mean over 5 orders)</h3>
+  <div class="tbl-wrap"><table>
+    <thead><tr><th>arm</th><th>C-track@1</th><th>verify calls saved</th><th>reuse precision</th><th>false-match reuses</th></tr></thead>
+    <tbody>
+      <tr><td>OFF (no memory)</td><td class="tnum">47.2</td><td class="tnum">—</td><td class="tnum">—</td><td class="tnum">—</td></tr>
+      <tr><td>ON — gated, both polarities (τ<sub>q</sub>=0.6)</td><td class="tnum">46.3 ± 0.9</td><td class="tnum">7.1%</td><td class="tnum">64.8%</td><td class="tnum">61.8</td></tr>
+      <tr class="hl"><td><b>NEGCACHE — reject-only reuse (R2)</b></td><td class="tnum"><b>47.5 ± 0.6</b></td><td class="tnum">4.1%</td><td class="tnum">85.4%</td><td class="tnum"><b>0 (structural)</b></td></tr>
+      <tr><td>GATELESS — harm arm</td><td class="tnum">37.1 ± 2.7</td><td class="tnum">49.0%</td><td class="tnum">67.8%</td><td class="tnum">385.8</td></tr>
+      <tr><td>ORACLE — gold-edge upper bound</td><td class="tnum">48.9 ± 0.6</td><td class="tnum">37.1%</td><td class="tnum">100%</td><td class="tnum">0</td></tr>
+    </tbody>
+  </table></div>
+  <div class="stats" style="margin-top:14px">
+    <div class="stat r"><div class="v">−10.1</div><div class="k">accuracy cost of ungated reuse — the false-memory harm every memory paper hand-waves, measured</div></div>
+    <div class="stat g"><div class="v">0</div><div class="k">false-match reuses in NEGCACHE, by construction: a stale reject skips one candidate; only a stale match can elect a wrong winner</div></div>
+    <div class="stat"><div class="v">37%</div><div class="k">of verify compute is redundant given the corpus's shared-moment structure (ORACLE) — the ON↔ORACLE gap is the open research target</div></div>
+    <div class="stat c"><div class="v">47.7 / 8.8%</div><div class="k">NEGCACHE at τ<sub>q</sub>=0.5 (τ-sweep, exploratory — the pre-registered τ=0.6 stays primary)</div></div>
+  </div>
+  <p class="sub" style="margin-top:12px">Honest reading: memory here is not an accuracy win — it is
+  <b>accuracy-parity compute savings with structurally bounded harm</b>, plus a measured ceiling.
+  Full-polarity reuse fails because 26% of its reuses are false matches at current gate quality —
+  a finding, not a failure: the gate’s insufficiency is only visible because reuse decisions are
+  scoreable against verified match sets.</p>
 </div></section>
 <!-- ================= RESULTS ================= -->
 <section id="results"><div class="wrap">
@@ -779,6 +840,36 @@ pre.bib{background:var(--bg2);border:1px solid var(--line);border-radius:10px;pa
     <div class="stat g"><div class="v">p=0.19</div><div class="k">zero-shot 3B vs the frontier agent — statistically indistinguishable; the verification skill is intrinsic</div></div>
     <div class="stat r"><div class="v">34.7</div><div class="k">teacher C-track@IoU0.5 vs 49.0 at video level — temporal localization is the real bottleneck</div></div>
   </div>
+
+  <h3 class="block">Literature methods on AMBER — the penalty is method-general</h3>
+  <p class="sub" style="margin-bottom:14px">Supervised corpus-VCMR and PRVR methods, trained on
+  AMBER-train (664 queries) with their <b>native single-gold supervision</b>, official code, our
+  CLIP ViT-L features — then their same rankings dual-scored. Identical protocol for every row:
+  271 test queries, full source-pool ranking.</p>
+  <div class="tbl-wrap"><table>
+    <thead><tr><th>method</th><th>trained on</th><th>anchor@1/5/10<br><span style="font-weight:400">(single-gold — the literature's scoring)</span></th>
+      <th>C-track@1/5/10<br><span style="font-weight:400">(recall-complete)</span></th><th>ambiguity penalty@1<br><span style="font-weight:400">(n=92 multi-video)</span></th></tr></thead>
+    <tbody>
+      <tr><td>XML <span style="color:#8a8474">(ECCV'20 — TVR's method)</span></td><td>AMBER-train</td>
+        <td class="tnum">1.5 / 6.3 / 9.2</td><td class="tnum">3.3 / 11.4 / 15.1</td><td class="tnum">+5.4</td></tr>
+      <tr><td>ReLoCLNet <span style="color:#8a8474">(SIGIR'21)</span></td><td>AMBER-train</td>
+        <td class="tnum">2.2 / 15.5 / 24.4</td><td class="tnum">6.6 / 24.7 / 34.7</td><td class="tnum">+13.0</td></tr>
+      <tr><td>HLFormer <span style="color:#8a8474">(ICCV'25 — PRVR SOTA)</span></td><td>AMBER-train</td>
+        <td class="tnum">3.7 / 13.7 / 21.0</td><td class="tnum">6.3 / 19.9 / 29.5</td><td class="tnum">+7.6</td></tr>
+      <tr class="hl"><td>CLIP ViT-L/14 <span style="color:#8a8474">(zero-shot)</span></td><td>nothing</td>
+        <td class="tnum">31.7 / 51.7 / 60.5</td><td class="tnum">36.9 / 62.0 / 72.3</td><td class="tnum">+15.2</td></tr>
+    </tbody>
+  </table></div>
+  <div class="stats" style="margin-top:14px">
+    <div class="stat"><div class="v">6.6 ≪ 36.9</div><div class="k">best trained-from-scratch method vs zero-shot CLIP, C-track@1 — at 664 training queries the classic VCMR/PRVR architectures collapse; the regime belongs to foundation-model pipelines (consistent with VERIFIED's fine-grained findings)</div></div>
+    <div class="stat c"><div class="v">+5.4 … +15.2</div><div class="k">every method family pays the ambiguity penalty — single-gold scoring under-credits XML, ReLoCLNet, HLFormer and CLIP alike; the penalty is a property of the data, not of our pipeline</div></div>
+    <div class="stat g"><div class="v">2020 – 2022</div><div class="k">the runnable supervised canon: every post-2021 corpus-VCMR method we surveyed (~50) has no reproducible code — an empty official repo (EventFormer), a placeholder (EDG), or none at all (JSG, G2L)</div></div>
+  </div>
+  <p class="sub" style="margin-top:12px;margin-bottom:26px">Verification arms (the ladder above) use the
+  candidate-shortlist protocol and are not directly comparable to corpus-wide ranking rows; MS-SL
+  (PRVR's canonical baseline) is training as this page is written, and a caption-BM25 probe that reads
+  construction captions — which no fair system gets — reaches 56.7–80.2 C-track@1, a disclosed
+  construction-reachability diagnostic, not a method.</p>
 
   <h3 class="block">Negative results, reported as such</h3>
   <div class="note red">
