@@ -800,6 +800,41 @@ similarity. Return JSON
       entry poisons both — the next encounter re-verifies on pixels.</p></div>
   </div>
 
+  <h3 class="block">The three rules, firing on the real test stream</h3>
+  <p class="sub" style="margin-bottom:14px">Each case below is logged from the actual streaming
+  simulation (seed-0 order, cached verifier scores) — query texts verbatim, moments from the QVH
+  sub-corpus where vlog look-alikes make memory work hardest.</p>
+  <div class="cards">
+    <div class="card"><div class="t" style="color:var(--amber)">R2 fires · a reject is reused</div>
+      <p style="font-size:12.5px;line-height:1.65">Moment <span class="mono">19bsWGsP2As [210–360s] @0.0</span> was
+      pixel-checked for<br><i>“A female person… gazing downward at documents… then elevating her gaze
+      to address the camera…”</i> → <b>reject</b> (p<sub>yes</sub> 0.014).</p>
+      <p style="font-size:12.5px;line-height:1.65">Later, a different query arrives — <i>“A seated female near a
+      window holds a tiny item… then shifts her head and eyes directly to the camera…”</i> —
+      similarity 0.65 ≥ τ<sub>q</sub>, stored confidence 0.986 ≥ τ<sub>conf</sub> →
+      <b>the reject is reused, no re-inspection</b>. Scored against the match sets: the skip was
+      correct. One verify call saved.</p></div>
+    <div class="card"><div class="t" style="color:var(--red)">R3 fires · contradiction ⇒ reopen</div>
+      <p style="font-size:12.5px;line-height:1.65">Moment <span class="mono">fMActfTJboI [210–360s] @32.3</span>:</p>
+      <p class="mono" style="font-size:11px;line-height:1.75">
+      q₁ “A person in front starts facing the lens… walking down an urban sidewalk” → reject (p .245)<br>
+      q₂ “Someone leans forward quickly, causing camera motion blur…” → match (p .731) · sim(q₁,q₂)=0.63</p>
+      <p style="font-size:12.5px;line-height:1.65">Two same-class queries, opposite pixel verdicts — the memory
+      cannot know which reflects the moment. <b>Both entries are poisoned</b>; the next query that
+      lands here pays for pixels again instead of inheriting either side of the disagreement.</p></div>
+    <div class="card"><div class="t" style="color:var(--cyan)">R1 fires · a second-hand verdict is refused</div>
+      <p style="font-size:12.5px;line-height:1.65">Moment <span class="mono">eSbPJx_eH8E [60–210s] @0.0</span>, a
+      three-query chain:</p>
+      <p class="mono" style="font-size:11px;line-height:1.75">
+      q₁ “A person walks indoors while talking…” → pixel reject (source entry)<br>
+      q₂ “…starts facing the lens… urban sidewalk” → reuses q₁ · its copy marked provenance:"reused"<br>
+      q₃ “A person talks to the camera while the camera shifts right…” arrives: q₂’s copy passes the
+      similarity gate (0.63) — <b>and is refused anyway</b>: only q₁’s pixel entry is a legal source.</p>
+      <p style="font-size:12.5px;line-height:1.65">Reuse always chains back to a pixel verdict at distance 1 —
+      a reuse of a reuse never happens, so one wrong verdict can mislead its neighbors but can
+      never start an avalanche relayed through copies.</p></div>
+  </div>
+
   <h3 class="block">The reuse gate</h3>
   <p class="sub" style="margin-bottom:16px">Reuse a stored verdict for a new query <span class="mono">q′</span>
   on moment <span class="mono">m</span> only if: same moment · query similarity ≥ τ<sub>q</sub> ·
