@@ -906,24 +906,24 @@ similarity. Return JSON
   <p class="sub" style="margin-bottom:14px">Supervised corpus-VCMR and PRVR methods, trained on
   AMBER-train (664 queries) with their <b>native single-gold supervision</b>, official code, our
   CLIP ViT-L features — then their same rankings dual-scored. Identical protocol for every row:
-  271 test queries, full source-pool ranking.</p>
+  271 test queries, full union-corpus ranking (1,964 videos, cross-source distractors).</p>
   <div class="tbl-wrap"><table>
     <thead><tr><th>method</th><th>trained on</th><th>anchor@1/5/10<br><span style="font-weight:400">(single-gold — the literature's scoring)</span></th>
       <th>C-track@1/5/10<br><span style="font-weight:400">(recall-complete)</span></th><th>ambiguity penalty@1<br><span style="font-weight:400">(n=92 multi-video)</span></th></tr></thead>
     <tbody>
       <tr><td>XML <span style="color:#8a8474">(ECCV'20 — TVR's method)</span></td><td>AMBER-train</td>
-        <td class="tnum">1.5 / 6.3 / 9.2</td><td class="tnum">3.3 / 11.4 / 15.1</td><td class="tnum">+5.4</td></tr>
+        <td class="tnum">0.7 / 3.3 / 4.8</td><td class="tnum">1.8 / 6.6 / 8.9</td><td class="tnum">+3.3</td></tr>
       <tr><td>ReLoCLNet <span style="color:#8a8474">(SIGIR'21)</span></td><td>AMBER-train</td>
-        <td class="tnum">2.2 / 15.5 / 24.4</td><td class="tnum">6.6 / 24.7 / 34.7</td><td class="tnum">+13.0</td></tr>
+        <td class="tnum">1.5 / 10.0 / 17.3</td><td class="tnum">5.2 / 17.0 / 27.3</td><td class="tnum">+10.9</td></tr>
       <tr><td>HLFormer <span style="color:#8a8474">(ICCV'25 — PRVR SOTA)</span></td><td>AMBER-train</td>
-        <td class="tnum">3.7 / 13.7 / 21.0</td><td class="tnum">6.3 / 19.9 / 29.5</td><td class="tnum">+7.6</td></tr>
+        <td class="tnum">3.0 / 11.1 / 16.6</td><td class="tnum">4.4 / 15.5 / 23.6</td><td class="tnum">+4.3</td></tr>
       <tr class="hl"><td>CLIP ViT-L/14 <span style="color:#8a8474">(zero-shot)</span></td><td>nothing</td>
-        <td class="tnum">31.7 / 51.7 / 60.5</td><td class="tnum">36.9 / 62.0 / 72.3</td><td class="tnum">+15.2</td></tr>
+        <td class="tnum">24.0 / 41.0 / 48.3</td><td class="tnum">28.8 / 49.1 / 58.7</td><td class="tnum">+14.1</td></tr>
     </tbody>
   </table></div>
   <div class="stats" style="margin-top:14px">
-    <div class="stat"><div class="v">6.6 ≪ 36.9</div><div class="k">best trained-from-scratch method vs zero-shot CLIP, C-track@1 — at 664 training queries the classic VCMR/PRVR architectures collapse; the regime belongs to foundation-model pipelines (consistent with VERIFIED's fine-grained findings)</div></div>
-    <div class="stat c"><div class="v">+5.4 … +15.2</div><div class="k">every method family pays the ambiguity penalty — single-gold scoring under-credits XML, ReLoCLNet, HLFormer and CLIP alike; the penalty is a property of the data, not of our pipeline</div></div>
+    <div class="stat"><div class="v">5.2 ≪ 28.8</div><div class="k">best trained-from-scratch method vs zero-shot CLIP, C-track@1 — at 664 training queries the classic VCMR/PRVR architectures collapse; the regime belongs to foundation-model pipelines (consistent with VERIFIED's fine-grained findings)</div></div>
+    <div class="stat c"><div class="v">+3.3 … +14.1</div><div class="k">every method family pays the ambiguity penalty — single-gold scoring under-credits XML, ReLoCLNet, HLFormer and CLIP alike; the penalty is a property of the data, not of our pipeline</div></div>
     <div class="stat g"><div class="v">2020 – 2022</div><div class="k">the runnable supervised canon: every post-2021 corpus-VCMR method we surveyed (~50) has no reproducible code — an empty official repo (EventFormer), a placeholder (EDG), or none at all (JSG, G2L)</div></div>
   </div>
   <p class="sub" style="margin-top:12px;margin-bottom:26px">Verification arms (the ladder above) use the
